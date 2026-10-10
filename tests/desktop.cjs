@@ -1,0 +1,27 @@
+const {_electron:electron}=require('playwright');
+const assert=require('node:assert/strict');
+const path=require('node:path');
+const fs=require('node:fs');
+const os=require('node:os');
+const project=path.resolve(__dirname,'..');
+const testDirectory=fs.mkdtempSync(path.join(os.tmpdir(),'derniere-vague-test-'));
+(async()=>{
+ const app=await electron.launch({executablePath:require('electron'),args:[project,...(process.platform==='linux'?['--no-sandbox','--ozone-platform=headless','--disable-gpu']:[])],env:{...process.env,XDG_CONFIG_HOME:path.join(testDirectory,'config'),XDG_CACHE_HOME:path.join(testDirectory,'cache')},timeout:20000});
+ const page=await app.firstWindow();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.waitForLoadState('domcontentloaded');
+ assert.equal(page.url(),'vague://game/index.html');
+ assert.equal(await page.locator('.crew-card').count(),3);
+ await page.locator('#start').click();
+ await page.locator('#action-2').click();
+ await page.waitForTimeout(9000);
+ assert.equal(await page.locator('#count-fish').textContent(),'2');
+ await page.locator('#pause').click();
+ await page.reload();
+ assert.equal(await page.locator('#pause-shade').isVisible(),true);
+ assert.equal(await page.locator('#count-fish').textContent(),'2');
+ const security=await app.evaluate(({BrowserWindow})=>{const p=BrowserWindow.getAllWindows()[0].webContents.getLastWebPreferences();return {nodeIntegration:p.nodeIntegration,contextIsolation:p.contextIsolation,sandbox:p.sandbox};});
+ assert.deepEqual(security,{nodeIntegration:false,contextIsolation:true,sandbox:true});
+ assert.deepEqual(errors,[]);
+ console.log('PASS: application Electron, fichiers via protocole local, pêche, sauvegarde après rechargement, isolation du rendu.');
+ await app.close();
+})().catch(e=>{console.error(e);process.exit(1)});

@@ -1,0 +1,47 @@
+name: Build Windows release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the game
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Check JavaScript
+        run: npm run check
+      - name: Build portable Windows executable
+        run: npm run build:windows
+      - name: Create checksum and publish release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $artifacts = @(Get-ChildItem 'dist/Derniere-Vague-*-Windows-x64.exe')
+          if ($artifacts.Count -ne 1) { throw 'Expected exactly one portable Windows executable.' }
+          $exe = $artifacts[0]
+          $checksum = $exe.FullName + '.sha256'
+          $hash = (Get-FileHash $exe.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $($exe.Name)" | Set-Content $checksum -Encoding ascii
+          gh release create "$env:GITHUB_REF_NAME" "$($exe.FullName)" "$checksum" --verify-tag --title "Dernière Vague $env:GITHUB_REF_NAME — Windows" --notes-file '.github/release-notes.md'
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub release publication failed.' }
