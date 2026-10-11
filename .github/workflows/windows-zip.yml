@@ -1,0 +1,53 @@
+name: Add ZIP to Windows release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/windows-zip.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-zip-v1.0.0
+  cancel-in-progress: false
+
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download verified Windows release and create ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag=v1.0.0
+          exe=Derniere-Vague-1.0.0-Windows-x64.exe
+          archive=Derniere-Vague-1.0.0-Windows-x64.zip
+          if gh release view "$tag" --json assets --jq '.assets[].name' | grep -Fxq "$archive"; then
+            echo 'ZIP already published; leaving the existing asset unchanged.'
+            exit 0
+          fi
+          mkdir -p package/Derniere-Vague
+          gh release download "$tag" --pattern "$exe" --pattern "$exe.sha256" --dir package/Derniere-Vague
+          cd package/Derniere-Vague
+          sha256sum --check "$exe.sha256"
+          cat > LISEZ-MOI.txt <<'TXT'
+          DERNIÈRE VAGUE — Windows 10/11, 64 bits
+
+          1. Faites un clic droit sur le ZIP puis « Extraire tout ».
+          2. Ouvrez le dossier Derniere-Vague extrait.
+          3. Double-cliquez sur Derniere-Vague-1.0.0-Windows-x64.exe.
+
+          Aucune installation nécessaire. F11 : plein écran.
+          Le programme est non signé. La sauvegarde est locale à votre PC.
+          TXT
+          cd ..
+          zip -0 -r "../$archive" Derniere-Vague
+          cd ..
+          unzip -t "$archive"
+          gh release upload "$tag" "$archive"
