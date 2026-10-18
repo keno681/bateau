@@ -1,14 +1,14 @@
 {
   "name": "derniere-vague",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
-  "description": "Un jeu de survie en mer : trois marins, un bateau, une tempête.",
+  "description": "Survie en mer : cinq marins, huit salles et un saboteur secret.",
   "author": "Dernière Vague",
   "main": "desktop/main.cjs",
   "scripts": {
     "start": "electron .",
     "build:windows": "electron-builder --win portable dir --x64",
-    "check": "node --check game.js && node --check desktop/main.cjs && node --check desktop/preload.cjs && node --check desktop/patch-store.cjs && node --check desktop/workshop.js && node --check desktop/room.cjs && node --check desktop/lobby.js && node --check desktop/udp-stream.cjs",
+    "check": "node --check game.js && node --check desktop/main.cjs && node --check desktop/preload.cjs && node --check desktop/patch-store.cjs && node --check desktop/workshop.js && node --check desktop/room.cjs && node --check desktop/lobby.js && node --check desktop/udp-stream.cjs && node --check desktop/match.cjs",
     "install:electron": "node node_modules/electron/install.js"
   },
   "devDependencies": {
@@ -46,7 +46,7 @@
     "portable": {
       "artifactName": "Derniere-Vague-${version}-Windows-x64.exe",
       "requestExecutionLevel": "user",
-      "unpackDirName": "DerniereVague-1.4.0"
+      "unpackDirName": "DerniereVague-1.5.0"
     }
   }
 }

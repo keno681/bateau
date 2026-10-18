@@ -2,6 +2,7 @@
 const { app, BrowserWindow, Menu, protocol, ipcMain, clipboard } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
 const { Room } = require('./room.cjs');
 const { PatchStore, FILES } = require('./patch-store.cjs');
 protocol.registerSchemesAsPrivileged([
@@ -63,8 +64,12 @@ else {
     const headless = process.platform === 'linux' && app.commandLine.getSwitchValue('ozone-platform') === 'headless';
     if (headless) Menu.setApplicationMenu(null);
     store = new PatchStore(path.join(__dirname, '..'), path.join(app.getPath('userData'), 'modifications'));
-    room = new Room({ version: app.getVersion(), validateFiles: files => {
+    const identityFile=path.join(app.getPath('userData'),'network-player-id.txt');let playerId;
+    try{playerId=fs.readFileSync(identityFile,'utf8').trim();}catch{}
+    if(!/^[a-f0-9-]{36}$/.test(playerId||'')){playerId=crypto.randomUUID();fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.writeFileSync(identityFile,playerId,{mode:0o600});}
+    room = new Room({ id:playerId, version: app.getVersion(), validateFiles: files => {
       store.validateFiles(files);
+      if((room?.match||room?.remoteMatch)&&!files['game.js'].includes('vague-saboteur-v1'))throw Error('Ce script retire le salon et les rôles secrets. Quittez le mode saboteur avant de l’appliquer.');
       if (!files['game.js'].includes('vague-network-v1') || !files['index.html'].includes('id="network"')) throw new Error('Les fichiers du jeu utilisent une ancienne version. Appliquez le script multijoueur 1.3.0 ou revenez à la version d’origine avant d’héberger.');
     } });
     room.on('status', status => {
@@ -125,7 +130,7 @@ else {
     ipcMain.handle('network:status', event => { requireLobby(event); return { ok: true, ...room.status(true) }; });
     ipcMain.handle('network:host', async (event, options) => {
       requireLobby(event);
-      try { return { ok: true, ...await room.host({ name: options?.name, port: options?.port, files: store.current().files }) }; }
+      try { return { ok: true, ...await room.host({ name: options?.name, port: options?.port, files: store.current().files, traitor: options?.traitor===true, goalDays: options?.goalDays, sleepDuration: 'day' }) }; }
       catch (error) { return { ok: false, error: error.message }; }
     });
     ipcMain.handle('network:join', async (event, options) => {
@@ -133,6 +138,10 @@ else {
       try { return { ok: true, ...await room.join({ name: options?.name, invitation: options?.invitation }) }; }
       catch (error) { return { ok: false, error: error.message }; }
     });
+    ipcMain.handle('network:lobby-ready', (event, value) => { requireLobby(event); return result(()=>{room.lobbyReady(value);}); });
+    ipcMain.handle('network:start-match', async event => { requireLobby(event); try {await room.startMatch();return {ok:true};}catch(error){return {ok:false,error:error.message};} });
+    ipcMain.handle('network:return-lobby', event => {requireLobby(event);return result(()=>{room.returnToLobby();});});
+    ipcMain.handle('network:sabotage', (event, action, target) => {requireGame(event);return room.sabotage(action,target);});
     ipcMain.handle('network:leave', async event => { requireLobby(event); await room.leave(); restartGame(); return { ok: true }; });
     ipcMain.handle('network:copy', event => { requireLobby(event); if (room.role !== 'host') return { ok: false, error: 'Aucun code d’hôte disponible.' }; clipboard.writeText(room.invitation); return { ok: true }; });
     ipcMain.handle('network:close', event => { requireLobby(event); const view=lobby;setTimeout(()=>{if(!view.isDestroyed())view.close();},150);return { ok: true }; });

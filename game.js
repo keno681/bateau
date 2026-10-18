@@ -83,6 +83,9 @@ function createBoat3D(api) {
   if(!api.paused())for(let k=0;k<3;k++)p[k]+=(target[k]-p[k])*Math.min(1,dt*3.5);
   const gait=moving?Math.sin(elapsed*13+i)*.38:0,breathe=Math.sin(elapsed*2+i)*.025,y=p[1]+breathe;
   const clothing=['#bd9866','#c2c9ad','#c5ad71','#547b98','#819e77'][i];
+  const asleep=c.sleepDay===state.day&&state.time<c.sleepUntil;
+  if(asleep){box(p[0],y+.27,p[2],.95,.4,.4,clothing);box(p[0]-.7,y+.3,p[2],.5,.45,.45,'#ddb18b');box(p[0]+.65,y+.24,p[2],.5,.25,.36,'#354f60');box(p[0]-.7,y+.55,p[2],.5,.12,.45,clothing);}
+  else {
   for(let side of [-1,1]){box(p[0]+side*.16,y+.31,p[2],.22,.6,.27,'#354f60',side*gait);box(p[0]+side*.16,y+.06,p[2]+.07,.27,.13,.42,'#243941');}
   box(p[0],y+.86,p[2],.64,.7,.38,clothing);box(p[0],y+.6,p[2]+.21,.65,.09,.05,'#c8af76');
   for(let side of [-1,1]){let swing=work?Math.sin(elapsed*9)*.4:-side*gait;box(p[0]+side*.43,y+.86,p[2],.19,.65,.25,clothing,swing);box(p[0]+side*.43,y+.52,p[2]+.04,.19,.18,.22,'#dbb18d');}
@@ -92,8 +95,9 @@ function createBoat3D(api) {
   if(i===2){box(p[0],y+1.8,p[2],.73,.1,.6,'#d3b46b');box(p[0],y+1.86,p[2],.49,.12,.4,'#bba063');}
   if(i===3){box(p[0],y+1.83,p[2],.65,.19,.5,'#ecebd9');box(p[0],y+1.73,p[2]+.07,.68,.07,.6,'#284755');box(p[0],y+1.84,p[2]+.26,.12,.1,.03,'#d6b46d');for(let side of [-1,1])box(p[0]+side*.23,y+1.16,p[2]+.2,.18,.07,.05,'#d6b46d');}
   if(i===4){box(p[0],y+1.8,p[2],.66,.16,.52,'#78936d');box(p[0],y+1.72,p[2]+.1,.7,.06,.6,'#3c604b');box(p[0]+.25,y+.84,p[2]+.27,.32,.43,.08,'#d6ca9b');for(let side of [-1,1]){box(p[0]+side*.13,y+1.49,p[2]+.27,.2,.025,.03,'#465f57');box(p[0]+side*.13,y+1.57,p[2]+.27,.2,.025,.03,'#465f57');}}
+  }
   if(i===api.selected())box(p[0],p[1]+.025,p[2],.95,.04,.75,'#eac07d');
-  const element=document.getElementById('char-'+i);if(element){const q=project(boat([p[0],y+1.2,p[2]]));element.style.left=Math.round(q[0])+'px';element.style.top=Math.round(q[1])+'px';}
+  const element=document.getElementById('char-'+i);if(element){element.classList.toggle('asleep',asleep);const tag=element.querySelector('.name-tag');if(tag)tag.textContent=['GASTON','SUZANNE','MARIN','ÉMILE','VICTOR'][i]+(asleep?' · Zzz':'');const q=project(boat([p[0],y+1.2,p[2]]));element.style.left=Math.round(q[0])+'px';element.style.top=Math.round(q[1])+'px';}
  }
  function objectPosition(o){const r=byId[roomOfType[o.type]],offset=((o.id*17)%29)/29;return [r.x-1.5+offset*3,r.y+.25,1.65];}
  function project(p){const w=matrix[3]*p[0]+matrix[7]*p[1]+matrix[11]*p[2]+matrix[15];return [(matrix[0]*p[0]+matrix[4]*p[1]+matrix[8]*p[2]+matrix[12])/w*width/2+width/2,height/2-(matrix[1]*p[0]+matrix[5]*p[1]+matrix[9]*p[2]+matrix[13])/w*height/2];}
@@ -144,9 +148,10 @@ function createBoat3D(api) {
 (async () => {
 const $ = (id) => document.getElementById(id);
 const DAY_LENGTH = 140, SAVE_KEY = 'derniere-vague-v1';
+// vague-saboteur-v1 — Les rôles et les actions secrètes restent dans le moteur.
 // vague-network-v1 — Le moteur réseau reste dans le processus principal.
 const NET=window.vagueNetwork;
-let boatView=null;
+let boatView=null, effectsRevision=0, sabotageBusy=false;
 const ROOM_IDS=['engine','kitchen','hold','workshop','bridge','radio','medical','dorm'];
 const HOME_ROOMS=['engine','kitchen','hold','bridge','workshop'];
 let netInfo={role:'offline',phase:'idle',revision:0,players:[]}, clientSave=false;
@@ -212,18 +217,21 @@ function renderCrew(){
  $('characters').innerHTML=roles.map((r,i)=>`<button class="character ${i===selected?'selected':''}" id="char-${i}" style="left:${r.home.x}%;top:${r.home.y}px" aria-label="Sélectionner ${r.name}, ${r.job}" title="${r.name} · ${r.job}"><span class="name-tag">${r.name.toUpperCase()}</span>${avatar(i)}</button>`).join('');
  roles.forEach((r,i)=>{const el=$('char-'+i);el.onclick=()=>select(i);const w=state.crew[i].work;if(w){el.classList.add(w.kind==='collect'?'walking':'working');const o=state.objects.find(o=>o.id===w.objectId);if(o){el.style.left=o.x+'%';el.style.top=o.y+'px';}}});
 }
-function select(i){selected=i;document.querySelectorAll('.crew-card').forEach((c,j)=>c.classList.toggle('selected',i===j));document.querySelectorAll('.crew-select').forEach((c,j)=>c.setAttribute('aria-pressed',String(i===j)));roles.forEach((_,j)=>$('char-'+j).classList.toggle('selected',i===j));$('scene-hint').textContent=`${roles[i].name} · Récupérez ${i===0?'les pièces pour réparer':i===1?'les provisions pour cuisiner':i===2?'les appâts pour pêcher':i===3?'les cartes pour tenir le cap':'les outils pour inspecter le bateau'}.`;renderObjects();boatView?.focus(state.crew[i].room||HOME_ROOMS[i],false);}
+function select(i){selected=i;document.querySelectorAll('.crew-card').forEach((c,j)=>c.classList.toggle('selected',i===j));document.querySelectorAll('.crew-select').forEach((c,j)=>c.setAttribute('aria-pressed',String(i===j)));roles.forEach((_,j)=>$('char-'+j).classList.toggle('selected',i===j));$('scene-hint').textContent=`${roles[i].name} · Récupérez ${i===0?'les pièces pour réparer':i===1?'les provisions pour cuisiner':i===2?'les appâts pour pêcher':i===3?'les cartes pour tenir le cap':'les outils pour inspecter le bateau'}.`;renderObjects();boatView?.focus(state.crew[i].room||HOME_ROOMS[i],false);renderMatch();}
+function isAsleep(i){const c=state?.crew[i];return !!c&&c.sleepDay===state.day&&state.time<c.sleepUntil;}
+function matchBlocked(){return !!netInfo.match&&(netInfo.match.stage!=='playing'||netInfo.match.blocked);}
 function moveToRoom(id,role=selected){
  if(!ROOM_IDS.includes(id)||!Number.isInteger(role)||role<0||role>=roles.length||!canAct())return;
+ if(isAsleep(role)){toast(roles[role].name+' dort jusqu’à demain.');return;}
  if(state.crew[role].work){toast(roles[role].name+' termine d’abord son travail.');return;}
  if(netInfo.role==='client'){NET.command({type:'work',role:Math.min(role,2),crewRole:role,moveRoom:id});return;}
  state.crew[role].room=id;save();
 }
-function canAct(){if(netInfo.role!=='offline'&&netInfo.phase!=='running'){toast('Synchronisation du jeu en cours…');return false;}if(paused||state.outcome){toast('Reprenez la traversée pour donner un ordre.');return false;}return true;}
-function collect(id){if(netInfo.role==='client'){if(canAct())NET.command({type:'collect',role:Math.min(selected,2),crewRole:selected,objectId:id});return;}if(!canAct())return;let o=state.objects.find(o=>o.id===id);if(!o||o.claimed)return;let r=roles[selected],c=state.crew[selected];if(r.resource!==o.type){toast(`Cet objet est destiné au ${roles[resources[o.type].role].job.toLowerCase()}. Sélectionnez le bon marin.`);return;}if(c.work){toast(`${r.name} est déjà au travail.`);return;}o.claimed=true;c.room=boatView?.roomForType(o.type)||HOME_ROOMS[selected];c.work={kind:'collect',objectId:id,duration:3/moods[c.mood].speed,elapsed:0};let el=$('char-'+selected);el.style.left=o.x+'%';el.style.top=o.y+'px';el.classList.add('walking');renderObjects();renderStats();save();}
+function canAct(){if(matchBlocked()){toast('La traversée attend le salon ou la reconnexion d’un joueur.');return false;}if(netInfo.role!=='offline'&&netInfo.phase!=='running'){toast('Synchronisation du jeu en cours…');return false;}if(paused||state.outcome){toast('Reprenez la traversée pour donner un ordre.');return false;}return true;}
+function collect(id){if(isAsleep(selected)){toast(roles[selected].name+' est endormi. Sélectionnez sa carte pour lire son rêve.');return;}if(netInfo.role==='client'){if(canAct())NET.command({type:'collect',role:Math.min(selected,2),crewRole:selected,objectId:id});return;}if(!canAct())return;let o=state.objects.find(o=>o.id===id);if(!o||o.claimed)return;let r=roles[selected],c=state.crew[selected];if(r.resource!==o.type){toast(`Cet objet est destiné au ${roles[resources[o.type].role].job.toLowerCase()}. Sélectionnez le bon marin.`);return;}if(c.work){toast(`${r.name} est déjà au travail.`);return;}o.claimed=true;c.room=boatView?.roomForType(o.type)||HOME_ROOMS[selected];c.work={kind:'collect',objectId:id,duration:3/moods[c.mood].speed,elapsed:0};let el=$('char-'+selected);el.style.left=o.x+'%';el.style.top=o.y+'px';el.classList.add('walking');renderObjects();renderStats();save();}
 function costFor(i){return i===1&&state.inventory.fish>0?{fish:1}:roles[i].cost;}
-function work(i){if(netInfo.role==='client'){if(canAct())NET.command({type:'work',role:Math.min(i,2),crewRole:i});return;}if(!canAct())return;select(i);let c=state.crew[i];if(c.work){toast(`${roles[i].name} termine d’abord son travail.`);return;}let cost=costFor(i);if(Object.entries(cost).some(([key,n])=>state.inventory[key]<n)){toast(i===0?'Il faut 2 pièces. Récupérez-les dans la salle des machines.':i===1?'Il faut 2 provisions ou 1 poisson. Récupérez des provisions ou envoyez le pêcheur.':i===2?'Il faut 1 appât. Récupérez-en sur le pont.':i===3?'Il faut 1 carte marine. Récupérez-en sur le pont.':'Il faut 1 outil de contrôle. Récupérez-en sur le pont.');return;}Object.entries(cost).forEach(([key,n])=>state.inventory[key]-=n);c.room=HOME_ROOMS[i];c.work={kind:'action',duration:roles[i].duration/moods[c.mood].speed,elapsed:0};let el=$('char-'+i);el.style.left=roles[i].home.x+'%';el.style.top=roles[i].home.y+'px';el.classList.add('working');renderStats();save();}
-function complete(i){let c=state.crew[i],job=c.work;c.work=null;let char=$('char-'+i);char.classList.remove('walking','working');if(job.kind==='collect'){let o=state.objects.find(o=>o.id===job.objectId);if(o){state.inventory[o.type]++;state.objects=state.objects.filter(x=>x.id!==o.id);float('+1 '+resources[o.type].label,o.x,o.y-35,{object:o});log(`${roles[i].name} a récupéré ${resources[o.type].singular}.`);renderObjects();}}else{state.objectives[i]=true;if(i===0){state.hull=Math.min(100,state.hull+26);float('+26 coque',roles[i].home.x,135,{role:i});log('Gaston consolide la coque. On tiendra !');}if(i===1){state.food=Math.min(100,state.food+30);state.health=Math.min(100,state.health+8);float('+30 repas',roles[i].home.x,135,{role:i});log('Un repas chaud. Suzanne remonte le moral du bord.');}if(i===2){state.inventory.fish+=2;float('+2 poissons',roles[i].home.x,0,{role:i});log('Deux poissons ! De quoi remplir la marmite.');}if(i===3){state.protection=18;float('Cap tenu · 18 s',roles[i].home.x,0,{role:i});log('Émile tient le cap : dégâts de tempête réduits de moitié pendant 18 secondes.');}if(i===4){state.hull=Math.min(100,state.hull+8);state.health=Math.min(100,state.health+12);float('+8 coque · +12 santé',roles[i].home.x,0,{role:i});log('Victor repère les points faibles : coque renforcée et équipage rassuré.');}}char.style.left=roles[i].home.x+'%';char.style.top=roles[i].home.y+'px';save();}
+function work(i){if(isAsleep(i)){toast(roles[i].name+' dort jusqu’à demain.');return;}if(netInfo.role==='client'){if(canAct())NET.command({type:'work',role:Math.min(i,2),crewRole:i});return;}if(!canAct())return;select(i);let c=state.crew[i];if(c.work){toast(`${roles[i].name} termine d’abord son travail.`);return;}let cost=costFor(i);if(Object.entries(cost).some(([key,n])=>state.inventory[key]<n)){toast(i===0?'Il faut 2 pièces. Récupérez-les dans la salle des machines.':i===1?'Il faut 2 provisions ou 1 poisson. Récupérez des provisions ou envoyez le pêcheur.':i===2?'Il faut 1 appât. Récupérez-en sur le pont.':i===3?'Il faut 1 carte marine. Récupérez-en sur le pont.':'Il faut 1 outil de contrôle. Récupérez-en sur le pont.');return;}Object.entries(cost).forEach(([key,n])=>state.inventory[key]-=n);c.room=HOME_ROOMS[i];c.work={kind:'action',duration:roles[i].duration/moods[c.mood].speed,elapsed:0};let el=$('char-'+i);el.style.left=roles[i].home.x+'%';el.style.top=roles[i].home.y+'px';el.classList.add('working');renderStats();save();}
+function complete(i){let c=state.crew[i],job=c.work;c.work=null;let char=$('char-'+i);char.classList.remove('walking','working');if(job.kind==='collect'){let o=state.objects.find(o=>o.id===job.objectId);if(o){state.inventory[o.type]++;state.objects=state.objects.filter(x=>x.id!==o.id);float('+1 '+resources[o.type].label,o.x,o.y-35,{object:o});log(`${roles[i].name} a récupéré ${resources[o.type].singular}.`);renderObjects();}}else{state.objectives[i]=true;if(i===0){state.hull=Math.min(100,state.hull+26);float('+26 coque',roles[i].home.x,135,{role:i});log('Gaston consolide la coque. On tiendra !');}if(i===1){state.food=Math.min(100,state.food+30);state.health=Math.min(100,state.health+8);float('+30 repas',roles[i].home.x,135,{role:i});log('Un repas chaud. Suzanne remonte le moral du bord.');}if(i===2){const amount=2+(state.forecast?.fishBonus||0);state.inventory.fish+=amount;float('+'+amount+' poissons',roles[i].home.x,0,{role:i});log(amount+' poissons ! De quoi remplir la marmite.');}if(i===3){state.protection=18;float('Cap tenu · 18 s',roles[i].home.x,0,{role:i});log('Émile tient le cap : dégâts de tempête réduits de moitié pendant 18 secondes.');}if(i===4){state.hull=Math.min(100,state.hull+8);state.health=Math.min(100,state.health+12);float('+8 coque · +12 santé',roles[i].home.x,0,{role:i});log('Victor repère les points faibles : coque renforcée et équipage rassuré.');}}char.style.left=roles[i].home.x+'%';char.style.top=roles[i].home.y+'px';save();}
 function renderStats(){
  for(const key of ['hull','food','health']){let n=Math.ceil(state[key]);$(key+'-value').textContent=n+'%';$(key+'-bar').style.width=n+'%';$(key+'-value').classList.toggle('critical',n<25);}
  $('hull-note').textContent=state.protection>0?'Cap tenu : dégâts réduits · '+Math.ceil(state.protection)+' s':state.hull<25?'Danger ! Réparez la coque rapidement':state.hull<60?'La coque subit les assauts de la mer':'Le bateau tient bon';
@@ -232,23 +240,23 @@ function renderStats(){
  $('day-label').textContent='JOUR '+String(state.day).padStart(2,'0');$('clock').textContent=clock()+' · '+(state.time<35?'À l’aube':state.time<95?'En pleine tempête':'Dernière ligne droite');
  $('time-bar').style.width=state.time/DAY_LENGTH*100+'%';$('remaining').textContent='Tenir jusqu’à 18:00 · '+Math.ceil(DAY_LENGTH-state.time)+' s';
  $('inventory').innerHTML=Object.entries(resources).map(([k,r])=>`<div class="inventory-item">${icon(k)}<div><strong id="count-${k}">${state.inventory[k]}</strong><small>${r.label}</small></div></div>`).join('');
- roles.forEach((r,i)=>{const c=state.crew[i],cost=costFor(i);$('cost-'+i).textContent=Object.entries(cost).map(([key,n])=>n+' '+(n===1?{parts:'pièce',ingredients:'provision',bait:'appât',fish:'poisson',charts:'carte',tools:'outil'}[key]:resources[key].label.toLowerCase())).join(' + ');$('action-'+i).disabled=paused||(netInfo.role!=='offline'&&netInfo.phase!=='running')||!!state.outcome||!!c.work||Object.entries(cost).some(([key,n])=>state.inventory[key]<n);$('status-'+i).textContent=c.work?(c.work.kind==='collect'?'Récupération en cours…':'Au travail…'):'Disponible · '+moods[c.mood].note.toLowerCase();$('work-'+i).style.width=c.work?Math.min(100,c.work.elapsed/c.work.duration*100)+'%':'0%';});
- $('objectives').innerHTML=['Réparer la coque','Préparer un repas chaud','Ramener du poisson','Tenir le cap','Inspecter le bateau'].map((label,i)=>`<div class="objective ${state.objectives[i]?'done':''}"><i>${state.objectives[i]?'✓':''}</i>${label}</div>`).join('');$('objective-count').textContent=state.objectives.filter(Boolean).length+' / '+roles.length;
+ roles.forEach((r,i)=>{const c=state.crew[i],cost=costFor(i);$('cost-'+i).textContent=Object.entries(cost).map(([key,n])=>n+' '+(n===1?{parts:'pièce',ingredients:'provision',bait:'appât',fish:'poisson',charts:'carte',tools:'outil'}[key]:resources[key].label.toLowerCase())).join(' + ');$('action-'+i).disabled=isAsleep(i)||matchBlocked()||paused||(netInfo.role!=='offline'&&netInfo.phase!=='running')||!!state.outcome||!!c.work||Object.entries(cost).some(([key,n])=>state.inventory[key]<n);$('status-'+i).textContent=isAsleep(i)?'Endormi jusqu’à demain · rêve prémonitoire':c.work?(c.work.kind==='collect'?'Récupération en cours…':'Au travail…'):'Disponible · '+moods[c.mood].note.toLowerCase();$('work-'+i).style.width=c.work?Math.min(100,c.work.elapsed/c.work.duration*100)+'%':'0%';});
+ $('objectives').innerHTML=['Réparer la coque','Préparer un repas chaud','Ramener du poisson','Tenir le cap','Inspecter le bateau'].map((label,i)=>`<div class="objective ${state.objectives[i]?'done':''}"><i>${state.objectives[i]?'✓':''}</i>${label}</div>`).join('');$('objective-count').textContent=state.objectives.filter(Boolean).length+' / '+roles.length;renderMatch();
 }
 function setPause(value){paused=value;document.querySelector('.app').classList.toggle('paused',value);$('pause-shade').hidden=!value||!!state.outcome||$('welcome').open||$('confirm-reset').open||$('code-notebook').open;$('pause').textContent=value?'▶':'II';$('pause').setAttribute('aria-label',value?'Reprendre la partie':'Mettre en pause');renderObjects();renderStats();}
 function endDay(outcome){state.outcome=outcome;setPause(true);log(outcome==='won'?'18:00. Une journée de plus. Nous sommes toujours là.':state.hull<=0?'La coque a cédé sous les vagues.':'L’équipage n’a plus la force de tenir.');save();showResult();}
 function showResult(){let won=state.outcome==='won';$('result-eyebrow').textContent=won?'JOUR '+state.day+' · TRAVERSÉE RÉUSSIE':'FIN DE LA TRAVERSÉE';$('result-title').textContent=won?'Encore à flot.':'La mer a eu le dernier mot.';$('result-description').textContent=won?'Le soir est arrivé et tout l’équipage est vivant. Demain, la tempête sera plus forte et chacun aura une nouvelle humeur.':state.hull<=0?'La coque a cédé. Collectez des pièces et faites réparer Gaston plus souvent lors de la prochaine traversée.':'Les repas ont manqué trop longtemps. Pêchez et cuisinez pour protéger l’équipage.';$('result-stats').innerHTML=`<div><strong>${Math.ceil(state.hull)} %</strong>Coque</div><div><strong>${Math.ceil(state.health)} %</strong>Santé</div><div><strong>${state.objectives.filter(Boolean).length} / ${roles.length}</strong>Objectifs</div>`;$('next-day').textContent=won?'Affronter le jour '+(state.day+1)+' →':'Recommencer la traversée →';if(!$('result').open)$('result').showModal();}
-function nextDay(){if(state.outcome==='lost'){reset();return;}state.day++;state.time=0;state.protection=0;state.outcome=null;state.objectives=roles.map(()=>false);state.crew.forEach((c,i)=>{c.mood=Math.floor(Math.random()*moods.length);c.work=null;});state.objects=[];spawnTimer=0;renderCrew();seedObjects();log('Nouvelle aube. Les humeurs changent, la tempête reste.');$('result').close();started=true;setPause(false);select(selected);save();}
+function nextDay(){if(netInfo.match?.stage==='finished'){NET.open();return;}if(state.outcome==='lost'){reset();return;}state.day++;state.time=0;state.protection=0;state.outcome=null;state.objectives=roles.map(()=>false);state.crew.forEach((c,i)=>{c.mood=Math.floor(Math.random()*moods.length);c.work=null;});state.objects=[];spawnTimer=0;renderCrew();seedObjects();log('Nouvelle aube. Les humeurs changent, la tempête reste.');$('result').close();started=true;setPause(false);select(selected);save();}
 function reset(){state=fresh();selected=0;spawnTimer=saveTimer=0;document.querySelectorAll('dialog').forEach(d=>d.close());$('float-texts').replaceChildren();renderCrew();seedObjects();log('L’Espérance quitte l’abri. Tout le monde à son poste !');started=true;setPause(false);select(0);save();}
-function tick(dt){if(netInfo.role==='client'||netInfo.role==='host'&&netInfo.phase!=='running')return;if(paused||state.outcome)return;dt=Math.min(dt,DAY_LENGTH-state.time);state.time+=dt;const storm=1+Math.min(state.day-1,9)*.13;state.hull=Math.max(0,state.hull-.31*storm*(dt-Math.min(dt,state.protection)*.5));state.protection=Math.max(0,state.protection-dt);state.food=Math.max(0,state.food-dt*.36);if(state.food<15)state.health=Math.max(0,state.health-dt*(state.food<=0?1.1:.3));state.crew.forEach((c,i)=>{if(c.work){c.work.elapsed+=dt;if(c.work.elapsed>=c.work.duration)complete(i);}});spawnTimer+=dt;saveTimer+=dt;uiTimer+=dt;if(spawnTimer>=4.5){spawnTimer=0;const type=['parts','ingredients','bait','charts','tools'][Math.floor(Math.random()*5)];spawn(type);}
+function tick(dt){if(matchBlocked())return;if(netInfo.role==='client'||netInfo.role==='host'&&netInfo.phase!=='running')return;if(paused||state.outcome)return;dt=Math.min(dt,DAY_LENGTH-state.time);state.time+=dt;const storm=1+Math.min(state.day-1,9)*.13;state.hull=Math.max(0,state.hull-.31*storm*(state.forecast?.hullFactor||1)*(dt-Math.min(dt,state.protection)*.5));state.protection=Math.max(0,state.protection-dt);state.food=Math.max(0,state.food-dt*.36);if(state.food<15)state.health=Math.max(0,state.health-dt*(state.food<=0?1.1:.3));state.crew.forEach((c,i)=>{if(c.work&&!isAsleep(i)){c.work.elapsed+=dt;if(c.work.elapsed>=c.work.duration)complete(i);}});spawnTimer+=dt;saveTimer+=dt;uiTimer+=dt;if(spawnTimer>=4.5){spawnTimer=0;const type=['parts','ingredients','bait','charts','tools'][Math.floor(Math.random()*5)];spawn(type);}
  if(state.hull<=0||state.health<=0)endDay('lost');else if(state.time>=DAY_LENGTH)endDay('won');if(saveTimer>=2){saveTimer=0;save();}if(uiTimer>=.1){uiTimer=0;renderStats();publishNetwork();}}
 function frame(now){if(lastTime)tick(Math.min((now-lastTime)/1000,.25));lastTime=now;requestAnimationFrame(frame);}
-$('pause').onclick=()=>{if(state.outcome)return;setPause(!paused);save();};$('resume').onclick=()=>setPause(false);
+$('pause').onclick=()=>{if(state.outcome)return;setPause(!paused);save();};$('resume').onclick=()=>{setPause(false);save();};
 $('help').onclick=()=>{modalWasPaused=paused;setPause(true);$('start').textContent='Retour à bord →';$('welcome').showModal();$('pause-shade').hidden=true;};
 $('start').onclick=()=>{const first=!started;$('welcome').close();started=true;setPause(first?false:modalWasPaused);save();};
 $('welcome').addEventListener('cancel',e=>{e.preventDefault();$('start').click();});
 $('result').addEventListener('cancel',e=>e.preventDefault());$('next-day').onclick=nextDay;
-$('reset').onclick=()=>{modalWasPaused=paused;setPause(true);$('confirm-reset').showModal();$('pause-shade').hidden=true;};
+$('reset').onclick=()=>{if(netInfo.match){toast('Terminez la traversée puis revenez au salon pour une nouvelle partie.');return;}modalWasPaused=paused;setPause(true);$('confirm-reset').showModal();$('pause-shade').hidden=true;};
 $('cancel-reset').onclick=()=>{$('confirm-reset').close();setPause(modalWasPaused);};$('confirm-reset').addEventListener('cancel',e=>{e.preventDefault();$('cancel-reset').click();});$('confirm-new').onclick=reset;
 window.addEventListener('keydown',e=>{if(document.querySelector('dialog[open]')||/INPUT|TEXTAREA|BUTTON/.test(document.activeElement.tagName))return;if(e.code==='Space'){e.preventDefault();$('pause').click();}if(['1','2','3','4','5'].includes(e.key))select(Number(e.key)-1);});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&started&&!state.outcome&&netInfo.role!=='host'){setPause(true);save();}});window.addEventListener('pagehide',save);
@@ -288,30 +296,57 @@ codeInput.addEventListener('keydown',e=>{
 });
 window.addEventListener('pagehide',saveCode);
 function publishNetwork(){
- if(NET&&state&&netInfo.role!=='client')NET.publish({state,paused,spawnTimer},netInfo.revision).catch(()=>{});
+ if(NET&&state&&netInfo.role!=='client')NET.publish({state,paused,spawnTimer,effectsRevision},netInfo.revision).catch(()=>{});
 }
 function renderNetwork(){
  const online=netInfo.role!=='offline';
  $('network-status').hidden=!online;
  const phase=netInfo.phase==='running'?'Connecté':netInfo.phase==='reconnecting'?'Reconnexion…':'Synchronisation…';
  $('network-status').textContent=(netInfo.role==='host'?'Vous hébergez':'Partie partagée')+' · '+netInfo.players.length+'/5 · '+phase+' · '+netInfo.players.map(p=>p.name).join(' / ');
- for(const id of ['pause','resume','reset','next-day'])$(id).disabled=netInfo.role==='client'||online&&netInfo.phase!=='running';
+ for(const id of ['pause','resume','reset','next-day'])$(id).disabled=netInfo.role==='client'||online&&netInfo.phase!=='running'||matchBlocked();
+ if(netInfo.match)$('reset').disabled=true;
+ if(netInfo.match?.stage==='finished'){$('next-day').disabled=false;$('next-day').textContent='Retour au salon →';}
+ renderMatch();
 }
 function applyShared(value){
  if(value)value={...value,state:upgradeSave(value.state)};
  if(!value||!validSave(value.state)){toast('État partagé incompatible. Ouvrez F8 pour revenir à l’origine.');return false;}
  const moodsBefore=state?.crew.map(c=>c.mood).join(',');
  const objectsBefore=JSON.stringify(state?.objects);
- state=JSON.parse(JSON.stringify(value.state));spawnTimer=Number.isFinite(value.spawnTimer)?value.spawnTimer:0;started=true;
+ effectsRevision=value.effectsRevision||0;state=JSON.parse(JSON.stringify(value.state));spawnTimer=Number.isFinite(value.spawnTimer)?value.spawnTimer:0;started=true;
  if(moodsBefore!==state.crew.map(c=>c.mood).join(','))renderCrew();
  if(objectsBefore!==JSON.stringify(state.objects))renderObjects();
  roles.forEach((r,i)=>{const w=state.crew[i].work,el=$('char-'+i),o=w?.kind==='collect'?state.objects.find(o=>o.id===w.objectId):null;el.style.left=(o?o.x:r.home.x)+'%';el.style.top=(o?o.y:r.home.y)+'px';el.classList.toggle('walking',w?.kind==='collect');el.classList.toggle('working',w?.kind==='action');});
  paused=value.paused;setPause(paused);renderLog();renderNetwork();
- if(state.outcome){if(!$('result').open)showResult();$('next-day').disabled=netInfo.role==='client';}else if($('result').open)$('result').close();
+ if(state.outcome&&netInfo.match?.stage!=='waiting'){if(!$('result').open)showResult();$('next-day').disabled=netInfo.role==='client'&&netInfo.match?.stage!=='finished';if(netInfo.match?.stage==='finished')$('next-day').textContent='Retour au salon →';}else if($('result').open)$('result').close();
  return true;
 }
+function renderMatch(){
+ if(!$('secret-role-panel'))return;
+ const m=netInfo.match;$('secret-role-panel').hidden=!m;
+ $('waiting-overlay').hidden=!m||m.stage!=='waiting';
+ $('day-forecast').hidden=!m||m.stage==='waiting'||!state?.forecast;
+ if(m&&state?.forecast)$('day-forecast').textContent='Jour '+state.day+' · '+state.forecast.label.replaceAll('demain','aujourd’hui');
+ if(m){const waiting=m.stage==='waiting',sab=m.role==='saboteur';
+  $('secret-role-title').textContent=waiting?'Salon d’attente':m.stage==='finished'?(m.winner==='crew'?'L’équipage a gagné !':'Le saboteur a gagné !'):sab?'Votre rôle secret : SABOTEUR':'Votre rôle secret : ÉQUIPAGE';
+  $('secret-role-note').textContent=waiting?'Tous les joueurs doivent être prêts avant le départ.':m.stage==='finished'?'Saboteur : '+(netInfo.players.find(p=>p.id===m.revealedSaboteur)?.name||'joueur déconnecté'):m.blocked?'La traversée attend la reconnexion d’un joueur.':sab?'Mission du jour : une avarie et un marin endormi. Votre rôle n’apparaît que sur votre écran.':'Survivez '+m.goalDays+' jour(s). Un joueur cherche à faire couler le bateau.';
+  $('sabotage-actions').hidden=!sab||m.stage!=='playing';
+  $('sabotage-damage').disabled=sabotageBusy||paused||!!state?.outcome||m.blocked||netInfo.phase!=='running'||!m.remaining?.damage;
+  $('sabotage-sleep').disabled=sabotageBusy||paused||!!state?.outcome||m.blocked||netInfo.phase!=='running'||!m.remaining?.sleep;
+  $('sabotage-damage').textContent=m.remaining?.damage?'Provoquer une avarie · −15 coque':'Avarie utilisée aujourd’hui';
+  $('sabotage-sleep').textContent=m.remaining?.sleep?'Endormir jusqu’à demain':'Sommeil utilisé aujourd’hui';
+ }
+ const dreaming=state&&netInfo.match?.stage!=='waiting'&&isAsleep(selected)&&!!state.crew[selected].dream;
+ $('dream-panel').hidden=!dreaming;if(dreaming){$('dream-title').textContent=roles[selected].name+' dort et rêve du lendemain';$('dream-text').textContent='« '+state.crew[selected].dream+' »';}
+}
+async function sabotage(action){
+ if(!NET?.sabotage||sabotageBusy)return;sabotageBusy=true;renderMatch();
+ try{const r=await NET.sabotage(action,Number($('sleep-target').value));if(!r.ok)toast(r.error);}catch{toast('Action indisponible. Vérifiez votre connexion.');}finally{sabotageBusy=false;renderMatch();}
+}
+$('sabotage-damage').onclick=()=>sabotage('damage');$('sabotage-sleep').onclick=()=>sabotage('sleep');
+$('waiting-lobby').onclick=$('match-open-lobby').onclick=()=>NET?.open();
 $('network').onclick=()=>{if(NET)NET.open();else toast('Le multijoueur nécessite la version Windows 1.3.0 ou plus récente.');};
-if(NET){try{netInfo=await NET.bootstrap();clientSave=netInfo.role==='client';}catch{toast('Le moteur multijoueur est indisponible.');}}
+if(NET){try{netInfo=await NET.bootstrap();clientSave=netInfo.role==='client'||!!netInfo.match;}catch{toast('Le moteur multijoueur est indisponible.');}}
 state=load();let restored=!!state;if(!state)state=fresh();
 try{boatView=createBoat3D({state:()=>state,selected:()=>selected,paused:()=>paused,move:moveToRoom,fallback:()=>{renderCrew();renderObjects();}});}catch(error){console.error(error);$('view-3d-status').textContent='Vue de secours · la 3D n’a pas pu démarrer';}
 if(!boatView){$('room-list').querySelectorAll('button').forEach(b=>b.onclick=()=>{moveToRoom(b.dataset.room);$('room-detail').textContent=b.textContent+' · vue de secours';});for(const id of ['camera-left','camera-right','camera-in','camera-out','camera-reset'])$(id).disabled=true;}
@@ -323,7 +358,7 @@ if(netInfo.role!=='offline'){
 else{started=true;if(state.outcome)showResult();else toast('Partie retrouvée. Reprenez la traversée quand vous êtes prêt.');}
 renderNetwork();
 if(NET){
- NET.onStatus(info=>{netInfo=info;renderNetwork();renderStats();renderObjects();});
+ NET.onStatus(info=>{netInfo=info;if(netInfo.role==='host'&&netInfo.match)clientSave=true;if(netInfo.match?.stage==='waiting'){$('result').close();setPause(true);}renderNetwork();renderStats();renderObjects();});
  NET.onSnapshot(packet=>{if(packet.revision===netInfo.revision&&(netInfo.role==='client'||packet.force)){applyShared(packet.runtime);if(netInfo.role==='host'&&packet.force)publishNetwork();}});
  NET.onCommand(command=>{if(netInfo.role!=='host'||netInfo.phase!=='running')return;const role=command.crewRole??command.role;if(!Number.isInteger(role)||role<0||role>=roles.length)return;if(command.moveRoom!==undefined){moveToRoom(command.moveRoom,role);publishNetwork();return;}const previous=selected;if(command.type==='collect'){select(role);collect(command.objectId);}else if(command.type==='work')work(role);select(previous);publishNetwork();});
  if(netInfo.role!=='offline')NET.ready(netInfo.revision);

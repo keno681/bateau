@@ -81,6 +81,9 @@ function createBoat3D(api) {
   if(!api.paused())for(let k=0;k<3;k++)p[k]+=(target[k]-p[k])*Math.min(1,dt*3.5);
   const gait=moving?Math.sin(elapsed*13+i)*.38:0,breathe=Math.sin(elapsed*2+i)*.025,y=p[1]+breathe;
   const clothing=['#bd9866','#c2c9ad','#c5ad71','#547b98','#819e77'][i];
+  const asleep=c.sleepDay===state.day&&state.time<c.sleepUntil;
+  if(asleep){box(p[0],y+.27,p[2],.95,.4,.4,clothing);box(p[0]-.7,y+.3,p[2],.5,.45,.45,'#ddb18b');box(p[0]+.65,y+.24,p[2],.5,.25,.36,'#354f60');box(p[0]-.7,y+.55,p[2],.5,.12,.45,clothing);}
+  else {
   for(let side of [-1,1]){box(p[0]+side*.16,y+.31,p[2],.22,.6,.27,'#354f60',side*gait);box(p[0]+side*.16,y+.06,p[2]+.07,.27,.13,.42,'#243941');}
   box(p[0],y+.86,p[2],.64,.7,.38,clothing);box(p[0],y+.6,p[2]+.21,.65,.09,.05,'#c8af76');
   for(let side of [-1,1]){let swing=work?Math.sin(elapsed*9)*.4:-side*gait;box(p[0]+side*.43,y+.86,p[2],.19,.65,.25,clothing,swing);box(p[0]+side*.43,y+.52,p[2]+.04,.19,.18,.22,'#dbb18d');}
@@ -90,8 +93,9 @@ function createBoat3D(api) {
   if(i===2){box(p[0],y+1.8,p[2],.73,.1,.6,'#d3b46b');box(p[0],y+1.86,p[2],.49,.12,.4,'#bba063');}
   if(i===3){box(p[0],y+1.83,p[2],.65,.19,.5,'#ecebd9');box(p[0],y+1.73,p[2]+.07,.68,.07,.6,'#284755');box(p[0],y+1.84,p[2]+.26,.12,.1,.03,'#d6b46d');for(let side of [-1,1])box(p[0]+side*.23,y+1.16,p[2]+.2,.18,.07,.05,'#d6b46d');}
   if(i===4){box(p[0],y+1.8,p[2],.66,.16,.52,'#78936d');box(p[0],y+1.72,p[2]+.1,.7,.06,.6,'#3c604b');box(p[0]+.25,y+.84,p[2]+.27,.32,.43,.08,'#d6ca9b');for(let side of [-1,1]){box(p[0]+side*.13,y+1.49,p[2]+.27,.2,.025,.03,'#465f57');box(p[0]+side*.13,y+1.57,p[2]+.27,.2,.025,.03,'#465f57');}}
+  }
   if(i===api.selected())box(p[0],p[1]+.025,p[2],.95,.04,.75,'#eac07d');
-  const element=document.getElementById('char-'+i);if(element){const q=project(boat([p[0],y+1.2,p[2]]));element.style.left=Math.round(q[0])+'px';element.style.top=Math.round(q[1])+'px';}
+  const element=document.getElementById('char-'+i);if(element){element.classList.toggle('asleep',asleep);const tag=element.querySelector('.name-tag');if(tag)tag.textContent=['GASTON','SUZANNE','MARIN','ÉMILE','VICTOR'][i]+(asleep?' · Zzz':'');const q=project(boat([p[0],y+1.2,p[2]]));element.style.left=Math.round(q[0])+'px';element.style.top=Math.round(q[1])+'px';}
  }
  function objectPosition(o){const r=byId[roomOfType[o.type]],offset=((o.id*17)%29)/29;return [r.x-1.5+offset*3,r.y+.25,1.65];}
  function project(p){const w=matrix[3]*p[0]+matrix[7]*p[1]+matrix[11]*p[2]+matrix[15];return [(matrix[0]*p[0]+matrix[4]*p[1]+matrix[8]*p[2]+matrix[12])/w*width/2+width/2,height/2-(matrix[1]*p[0]+matrix[5]*p[1]+matrix[9]*p[2]+matrix[13])/w*height/2];}

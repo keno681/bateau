@@ -75,3 +75,7 @@ L’hôte peut coller `patches/CAPITAINE-INSPECTEUR-POKEBALL.txt` dans sa Pokéb
 L’hôte applique `patches/BATEAU-3D-8-SALLES-POKEBALL.txt` dans la Pokéball. La mise à jour remplace les trois fichiers du jeu et inclut le capitaine et l’inspecteur. Huit salles sont accessibles : salle des machines, cambuse, cale, atelier, passerelle, salle radio, infirmerie et dortoir. Chaque joueur sélectionne un marin puis une salle pour l’y déplacer ; les destinations sont partagées. Un marin occupé termine son travail avant un nouveau déplacement. Les travaux ramènent le marin à sa salle de métier. Les actions et objectifs de survie restent disponibles.
 
 La rotation et le zoom de la caméra sont propres à chaque PC. Cette mise à jour ne change ni UDP 16383, ni le moteur Windows 1.4.0, ni les droits de la Pokéball : seul l’hôte valide les scripts communs. Le rendu WebGL et les mises à jour ont été vérifiés dans deux applications Electron et dans un navigateur sous Linux, y compris l’installation sur la version 1.4.0 d’origine.
+
+## Nouveau salon avec saboteur (1.5.0)
+
+Installez le moteur 1.5.0 sur tous les PC pour ce mode, puis consultez [SABOTEUR.md](SABOTEUR.md). L’hôte laisse Mode saboteur secret coché, chacun rejoint et clique sur Prêt, puis l’hôte lance. Une partie commencée n’accepte que les reconnexions de ses participants. Les nouvelles parties peuvent repartir depuis le même salon. Les anciens guides 1.4.0 ci-dessus concernent la coopération classique ; les textes capitaine/inspecteur et bateau 3D seuls ne remplacent pas le nouveau moteur.

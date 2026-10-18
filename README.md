@@ -1,6 +1,6 @@
 # bateau — Dernière Vague
 
-Un prototype de jeu de survie en mer, en français. Cinq personnages originaux, animés, travaillent sur un bateau vu en coupe : un mécano, une cuisinière, un pêcheur, un capitaine et un inspecteur.
+Un jeu de survie en mer, en français, avec un mode multijoueur à saboteur secret. Cinq personnages originaux, animés, travaillent sur un bateau vu en coupe : un mécano, une cuisinière, un pêcheur, un capitaine et un inspecteur.
 
 ## Jouer en local
 
@@ -47,7 +47,7 @@ Le test utilise une horloge accélérée et la préférence de réduction des mo
 
 Les versions publiées sont disponibles dans [les Releases GitHub](https://github.com/keno681/bateau/releases). Le workflow `.github/workflows/windows-release.yml` compile et publie un exécutable portable lorsqu’un tag `v*` est envoyé. Il utilise uniquement le jeton automatique du dépôt avec la permission `contents: write`, sans secret supplémentaire.
 
-La version portable est produite dans `dist/Derniere-Vague-1.4.0-Windows-x64.exe`. Elle contient le jeu et son moteur : aucun autre fichier, navigateur, Python ou connexion Internet n’est nécessaire pour jouer. Copier l’exécutable sur un PC Windows 10/11 en 64 bits puis le lancer par double-clic. F11 active/désactive le plein écran ; Échap quitte le plein écran.
+La version portable est produite dans `dist/Derniere-Vague-1.5.0-Windows-x64.exe`. Elle contient le jeu et son moteur : aucun autre fichier, navigateur, Python ou connexion Internet n’est nécessaire pour jouer. Copier l’exécutable sur un PC Windows 10/11 en 64 bits puis le lancer par double-clic. F11 active/désactive le plein écran ; Échap quitte le plein écran.
 
 Le fichier n’est pas signé avec un certificat d’éditeur. Les sauvegardes restent dans le profil local de l’utilisateur Windows et ne sont pas partagées avec la version navigateur ni entre différents PC. La compilation et l’archive ont été contrôlées sous Linux ; le lancement de l’exécutable sur Windows reste à vérifier.
 
@@ -118,3 +118,9 @@ L’hôte colle tout le texte dans sa Pokéball puis valide ; tous les écrans s
 Pour modifier le rendu : éditez `scripts/boat3d.js`, puis lancez `node scripts/generate-3d-patch.cjs`. Le rendu est incorporé dans `game.js` pour rester compatible avec les trois fichiers autorisés dans la Pokéball. Aucun téléchargement de moteur, CDN ou accès Internet n’est nécessaire pour jouer. Le script capitaine/inspecteur précédent conserve son contenu d’origine ; le réappliquer remplace aussi la vue 3D par l’ancienne vue.
 
 Validation 3D : `node tests/boat3d.cjs` (serveur local port 8010), et `PATCH_FILE=patches/BATEAU-3D-8-SALLES-POKEBALL.txt node tests/crew-patch.cjs` pour l’installation sur la vraie version 1.4.0 et les déplacements envoyés par un invité. Les tests WebGL utilisent un rendu logiciel dans l’environnement Linux ; l’affichage et les performances sur vos PC Windows restent à vérifier.
+
+### Salon et saboteur secret (moteur 1.5.0)
+
+Le nouveau [guide SABOTEUR.md](SABOTEUR.md) décrit le salon d’attente, les boutons Prêt, les rôles privés, les deux actions quotidiennes et les rêves qui annoncent le lendemain. Le nouveau moteur Windows 1.5.0 est nécessaire sur tous les PC. Le [texte SALON-SABOTEUR-POKEBALL.txt](patches/SALON-SABOTEUR-POKEBALL.txt) met ensuite les trois fichiers du jeu à jour si d’anciennes modifications Pokéball restent actives. Il inclut le bateau 3D et les cinq personnages.
+
+Tests : `node --test tests/patch-store.test.cjs tests/room.test.cjs tests/udp-stream.test.cjs tests/match.test.cjs`, `node tests/saboteur.cjs` pour trois applications et les rechargements, et `node tests/boat3d.cjs` pour le rendu et le sommeil. L’hôte fixe la durée à 1, 3 ou 5 jours. Le jeu solo et le mode coopératif classique restent disponibles.

@@ -2,6 +2,7 @@
 const net = require('node:net');
 const os = require('node:os');
 const udp = require('./udp-stream.cjs');
+const { Match } = require('./match.cjs');
 const crypto = require('node:crypto');
 const { EventEmitter } = require('node:events');
 const FILES = ['index.html', 'style.css', 'game.js'];
@@ -63,28 +64,69 @@ function addresses() {
   return [...new Set([...all.slice(0, 7), '127.0.0.1'])];
 }
 class Room extends EventEmitter {
-  constructor({ version, validateFiles, barrierTimeout = 12000 } = {}) {
-    super(); this.version = version || '1.4.0'; this.validateFiles = validateFiles || bundle; this.barrierTimeout = barrierTimeout;
+  constructor({ version, validateFiles, barrierTimeout = 12000, id } = {}) {
+    super(); this.version = version || '1.5.0'; this.validateFiles = validateFiles || bundle; this.barrierTimeout = barrierTimeout;
     this.role = 'offline'; this.phase = 'idle'; this.revision = 0; this.files = null; this.runtime = null; this.players = [];
-    this.id = crypto.randomUUID(); this.peers = new Map(); this.connections = new Set(); this.server = null; this.link = null; this.closed = false; this.pending = null; this.error = null; this.accepted = 0;
+    this.id = typeof id==='string'&&/^[a-f0-9-]{36}$/.test(id)?id:crypto.randomUUID(); this.peers = new Map(); this.connections = new Set(); this.server = null; this.link = null; this.closed = false; this.pending = null; this.error = null; this.accepted = 0; this.match = null; this.remoteMatch = null; this.actionRequests = new Map();
   }
+  connectedIds(){return [this.id,...[...this.peers].filter(([,p])=>p.ready===this.revision).map(([id])=>id)];}
   status(privateInfo = false) {
-    return { role: this.role, phase: this.phase, revision: this.revision, id: this.id, players: clone(this.players), error: this.error, ...(this.role === 'host' ? { acceptedConnections: this.accepted } : {}), ...(privateInfo && this.role === 'host' ? { invitation: this.invitation, addresses: this.addresses, port: this.port } : {}) };
+    return { role: this.role, phase: this.phase, revision: this.revision, id: this.id, players: clone(this.players), error: this.error, ...(this.match ? {match:{...this.match.public(this.connectedIds()),...this.match.private(this.id)}} : this.remoteMatch ? {match:clone(this.remoteMatch)} : {}), ...(this.role === 'host' ? { acceptedConnections: this.accepted } : {}), ...(privateInfo && this.role === 'host' ? { invitation: this.invitation, addresses: this.addresses, port: this.port } : {}) };
   }
   notify() { this.emit('status', this.status()); }
   bootstrap() { return { ...this.status(), runtime: this.runtime && clone(this.runtime) }; }
   checkFiles(files) { const checked = bundle(files); this.validateFiles(checked); return checked; }
+  broadcastMatch() {
+    if (!this.match) return;
+    const shared=this.match.public(this.connectedIds());
+    for(const [id,peer] of this.peers)peer.link.send({type:'match',match:{...shared,...this.match.private(id)}});
+    this.notify();
+  }
+  lobbyReady(value) {
+    if(typeof value!=='boolean')throw Error('État Prêt invalide.');
+    if(this.role==='client'){if(this.phase!=='running')throw Error('Le jeu se synchronise encore.');this.link.send({type:'lobby-ready',value});return;}
+    if(!this.match)throw Error('Aucun salon avec saboteur.');this.match.setReady(this.id,value);this.broadcastMatch();
+  }
+  async startMatch() {
+    if(this.role!=='host'||!this.match||this.phase!=='running')throw Error('Seul l’hôte peut commencer la partie.');
+    const ids=this.players.map(p=>p.id);this.match.checkStart(ids);
+    if([...this.peers.values()].some(p=>p.ready!==this.revision))throw Error('Les fichiers se chargent encore chez un joueur.');
+    await this.prepareFiles(this.files);
+    // Slots cannot change during preparation; every participant acknowledged.
+    const current=this.players.map(p=>p.id);
+    try {this.pending.runtime=this.match.start(current);this.broadcastMatch();this.commitPrepared();}
+    catch(error){this.abortPreparation(error.message);throw error;}
+  }
+  returnToLobby() {
+    if(this.role!=='host'||!this.match||this.phase!=='running'||this.match.stage!=='finished')throw Error('Terminez la traversée avant de revenir au salon.');
+    this.match=new Match({goalDays:this.match.goalDays,sleepDuration:this.match.sleepDuration});this.runtime.paused=true;this.runtime.effectsRevision=0;this.broadcastMatch();this.pushRuntime();
+  }
+  pushRuntime(){this.broadcast({type:'snapshot',revision:this.revision,runtime:this.runtime});this.emit('snapshot',{runtime:clone(this.runtime),revision:this.revision,force:true});}
+  sabotage(action,target) {
+    if(this.role==='client')return new Promise(resolve=>{
+      if(this.phase!=='running'||this.actionRequests.size){resolve({ok:false,error:'Une action ou une synchronisation est déjà en cours.'});return;}
+      const id=crypto.randomUUID(),timer=setTimeout(()=>{this.actionRequests.delete(id);resolve({ok:false,error:'L’hôte ne répond pas. Vérifiez votre mission avant de réessayer.'});},12000);timer.unref();this.actionRequests.set(id,{resolve,timer});
+      this.link.send({type:'sabotage',id,action,target,revision:this.revision});
+    });
+    try {this.applySabotage(this.id,action,target);return Promise.resolve({ok:true});}catch(error){return Promise.resolve({ok:false,error:error.message});}
+  }
+  applySabotage(id,action,target) {
+    if(!this.match||this.phase!=='running'||this.match.public(this.connectedIds()).blocked)throw Error('La partie n’est pas prête.');
+    this.runtime=this.match.act(id,action,target,this.runtime);this.broadcastMatch();this.pushRuntime();
+  }
   roster() {
     this.players = [{ id: this.id, name: this.name, host: true }, ...[...this.peers].map(([id, p]) => ({ id, name: p.name, host: false }))];
-    this.broadcast({ type: 'roster', players: this.players }); this.notify();
+    this.broadcast({ type: 'roster', players: this.players }); if(this.match){if(this.match.stage==='waiting')for(const id of this.match.ready)if(!this.players.some(p=>p.id===id))this.match.ready.delete(id);this.broadcastMatch();if(this.match.public(this.connectedIds()).blocked){this.runtime.paused=true;this.pushRuntime();}}this.notify();
   }
   broadcast(message) { for (const peer of this.peers.values()) peer.link.send(message); }
-  async host({ name, port = 16383, files } = {}) {
+  async host({ name, port = 16383, files, traitor = false, goalDays = 3, sleepDuration = 'day' } = {}) {
     if (this.role !== 'offline') throw new Error('Quittez la partie actuelle avant d’en héberger une autre.');
     if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('Port invalide.');
     const checked = this.checkFiles(files);
+    if(traitor&&!files['game.js'].includes('vague-saboteur-v1'))throw Error('Appliquez SALON-SABOTEUR-POKEBALL.txt ou utilisez F8 pour restaurer les fichiers du moteur 1.5.0 avant de créer ce salon.');
     if (!this.runtime) throw new Error('Le jeu se charge encore. Fermez le salon puis réessayez.');
     this.files = checked; this.name = cleanName(name); this.secret = crypto.randomBytes(24).toString('base64url');
+    this.match=traitor?new Match({goalDays,sleepDuration}):null;this.remoteMatch=null;if(this.match)this.runtime.paused=true;
     this.closed = false; this.server = udp.createServer(this.secret, socket => this.accept(socket));
     try {
       await new Promise((resolve, reject) => { const fail = e => reject(e); this.server.once('error', fail); this.server.listen(port, '0.0.0.0', () => { this.server.removeListener('error', fail); resolve(); }); });
@@ -104,13 +146,20 @@ class Room extends EventEmitter {
       if (!peerId) {
         if (message.type !== 'hello' || message.protocol !== 1 || message.version !== this.version || typeof message.id !== 'string' || !/^[a-f0-9-]{36}$/.test(message.id)) { link.send({ type: 'reject', error: 'Tous les joueurs doivent utiliser la même version du jeu.' }); socket.end(); return; }
         if (this.phase !== 'running') { link.send({ type: 'reject', error: 'Mise à jour en cours. Réessayez dans quelques secondes.' }); socket.end(); return; }
+        if(this.match&&this.match.stage!=='waiting'&&!this.match.members.includes(message.id)){link.send({type:'reject',error:'Cette traversée a déjà commencé. Attendez le prochain salon.'});socket.end();return;}
         if (this.peers.size >= 4 || this.peers.has(message.id) || message.id === this.id) { link.send({ type: 'reject', error: 'La partie est complète : cinq personnes maximum.' }); socket.end(); return; }
         clearTimeout(timer); peerId = message.id; this.accepted++;
         this.peers.set(peerId, { link, name: cleanName(message.name), lastSeen: Date.now(), ready: 0 });
-        this.roster(); link.send({ type: 'welcome', revision: this.revision, files: this.files, digest: digest(this.files), runtime: this.runtime, players: this.players }); return;
+        this.roster(); link.send({ type: 'welcome', revision: this.revision, files: this.files, digest: digest(this.files), runtime: this.runtime, players: this.players, ...(this.match?{match:{...this.match.public(this.connectedIds()),...this.match.private(peerId)}}:{}) }); return;
       }
       const peer = this.peers.get(peerId); if (!peer || peer.link !== link) return; peer.lastSeen = Date.now();
+      if(message.type==='lobby-ready'&&this.match&&typeof message.value==='boolean'&&peer.ready===this.revision){try{this.match.setReady(peerId,message.value);this.broadcastMatch();}catch{}return;}
+      if(message.type==='sabotage'&&typeof message.id==='string'&&/^[a-f0-9-]{36}$/.test(message.id)){
+        let result;try{if(peer.ready!==this.revision||message.revision!==this.revision)throw Error('Le jeu se synchronise.');this.applySabotage(peerId,message.action,message.target);result={ok:true};}catch(error){result={ok:false,error:error.message};}
+        link.send({type:'sabotage-result',id:message.id,result});return;
+      }
       if (message.type === 'command' && this.phase === 'running' && peer.ready === this.revision && message.revision === this.revision) {
+        if(this.match&&(this.match.stage!=='playing'||this.match.public(this.connectedIds()).blocked))return;
         const c = message.command;
         if (c && ['work', 'collect'].includes(c.type) && Number.isInteger(c.role) && c.role >= 0 && c.role <= 2 && (c.type !== 'collect' || Number.isInteger(c.objectId))) this.emit('command', { ...c, player: peerId });
       }
@@ -118,7 +167,7 @@ class Room extends EventEmitter {
         if (!message.ok) this.abortPreparation('Un joueur ne peut pas charger cette modification. Aucun changement partagé n’a été appliqué.');
         else { this.pending.waiting.delete(peerId); this.checkPrepared(); }
       }
-      if (message.type === 'ready' && message.revision === this.revision) { peer.ready = this.revision; if (this.phase === 'running') link.send({ type: 'resume', revision: this.revision, runtime: this.runtime }); else this.checkReady(); }
+      if (message.type === 'ready' && message.revision === this.revision) { peer.ready = this.revision; if(this.match)this.broadcastMatch(); if (this.phase === 'running') link.send({ type: 'resume', revision: this.revision, runtime: this.runtime }); else this.checkReady(); }
     }, () => {
       clearTimeout(timer); this.connections.delete(socket);
       if (peerId && this.peers.get(peerId)?.link === link) { this.peers.delete(peerId); if (this.pending) this.pending.waiting.delete(peerId); this.roster(); this.checkPrepared(); this.checkReady(); }
@@ -149,7 +198,7 @@ class Room extends EventEmitter {
           if (message.type === 'reject') { const error = new Error(message.error); error.rejected = true; finish(error); return; }
           if (message.type === 'welcome') {
             const files = this.checkFiles(message.files); if (digest(files) !== message.digest || !Number.isInteger(message.revision)) throw new Error('La version reçue est invalide.');
-            this.files = files; this.revision = message.revision; this.runtime = message.runtime ? runtime(message.runtime) : null; this.players = message.players; this.link = link; this.phase = 'loading'; this.error = null; this.lastReceived = Date.now(); clearInterval(this.watchdog); this.watchdog = setInterval(() => { if (this.link && Date.now()-this.lastReceived>15000) this.link.socket.destroy(); }, 3000); this.watchdog.unref(); welcomed = true; this.retryCount = 0; finish(); this.notify(); this.emit('reload', this.bootstrap()); return;
+            this.files = files; this.revision = message.revision; this.runtime = message.runtime ? runtime(message.runtime) : null; this.players = message.players; this.remoteMatch=message.match||null; this.link = link; this.phase = 'loading'; this.error = null; this.lastReceived = Date.now(); clearInterval(this.watchdog); this.watchdog = setInterval(() => { if (this.link && Date.now()-this.lastReceived>15000) this.link.socket.destroy(); }, 3000); this.watchdog.unref(); welcomed = true; this.retryCount = 0; finish(); this.notify(); this.emit('reload', this.bootstrap()); return;
           }
           if (!welcomed) return;
           this.receive(message, link);
@@ -165,6 +214,8 @@ class Room extends EventEmitter {
   }
   receive(message, link) {
     this.lastReceived = Date.now();
+    if(message.type==='match'){this.remoteMatch=message.match;this.notify();return;}
+    if(message.type==='sabotage-result'){const request=this.actionRequests.get(message.id);if(request){clearTimeout(request.timer);this.actionRequests.delete(message.id);request.resolve(message.result);}return;}
     if (message.type === 'ping') { link.send({ type: 'pong' }); return; }
     if (message.type === 'roster') { if (Array.isArray(message.players) && message.players.length <= 5) { this.players = message.players; this.notify(); } return; }
     if (message.type === 'snapshot' && message.revision === this.revision) { this.runtime = runtime(message.runtime); this.emit('snapshot', { runtime: this.runtime, revision: this.revision }); return; }
@@ -190,7 +241,16 @@ class Room extends EventEmitter {
   }
   publish(value, revision) {
     if (this.role === 'client' || this.role === 'host' && (this.phase !== 'running' || revision !== this.revision)) return;
-    this.runtime = runtime(value);
+    value=runtime(value);
+    if(this.match){
+      if(this.match.stage!=='waiting'&&value.effectsRevision!==this.match.effectsRevision){this.emit('snapshot',{runtime:clone(this.runtime),revision:this.revision,force:true});return;}
+      if(this.match.public(this.connectedIds()).blocked){value=clone(this.runtime);value.paused=true;}
+      const before=JSON.stringify(this.match.public(this.connectedIds())),effects=this.match.effectsRevision;
+      try{this.match.update(value,this.runtime);}catch{this.emit('snapshot',{runtime:clone(this.runtime),revision:this.revision,force:true});return;}
+      this.runtime=value;
+      if(before!==JSON.stringify(this.match.public(this.connectedIds())))this.broadcastMatch();
+      if(effects!==this.match.effectsRevision)this.emit('snapshot',{runtime:clone(this.runtime),revision:this.revision,force:true});
+    }else this.runtime=value;
     if (this.role === 'host') this.broadcast({ type: 'snapshot', revision: this.revision, runtime: this.runtime });
   }
   command(command) {
@@ -236,12 +296,13 @@ class Room extends EventEmitter {
     this.broadcast({ type: 'rollback', files: this.files, revision: this.revision, runtime: this.runtime }); this.notify(); this.emit('reload', this.bootstrap());
   }
   async leave() {
+    for(const r of this.actionRequests.values()){clearTimeout(r.timer);r.resolve({ok:false,error:'La partie est fermée.'});}this.actionRequests.clear();
     this.closed = true; clearInterval(this.heartbeat); clearInterval(this.watchdog); clearTimeout(this.retryTimer);
     if (this.pending) { clearTimeout(this.pending.timer); this.pending.reject(new Error('La partie est fermée.')); this.pending = null; }
     if (this.role === 'host') { this.broadcast({ type: 'ended' }); for (const socket of this.connections) socket.end(); }
     if (this.link) this.link.socket.destroy();
     const server = this.server; this.server = null;
-    this.role = 'offline'; this.phase = 'idle'; this.files = null; this.players = []; this.link = null; this.error = null; this.peers.clear(); this.notify();
+    this.role = 'offline'; this.phase = 'idle'; this.files = null; this.players = []; this.link = null; this.error = null; this.peers.clear(); this.match=null;this.remoteMatch=null;this.notify();
     if (server) await new Promise(resolve => { server.close(resolve); for (const socket of this.connections) { const t = setTimeout(() => socket.destroy(), 300); t.unref(); } });
   }
 }

@@ -1,9 +1,10 @@
 'use strict';
 (() => {
   const api = window.vagueNetwork, $ = id => document.getElementById(id);
-  let busy = false;
+  let busy = false, current=null;
   function message(text, error = false) { $('status').textContent = text; $('status').className = error ? 'error' : 'success'; }
   function render(s) {
+    current=s;
     const online = s.role !== 'offline' && s.phase !== 'connecting';
     $('setup').hidden = online; $('connected').hidden = !online;
     if (online) {
@@ -12,22 +13,34 @@
       if (s.invitation) $('code').value = s.invitation;
       if (s.addresses) $('address').textContent = 'Adresses locales : ' + s.addresses.filter(a => a !== '127.0.0.1').join(', ') + ' · Port ' + s.port;
       $('players').replaceChildren();
-      for (const player of s.players) { const li = document.createElement('li'); li.textContent = player.name + (player.host ? ' · Hôte' : '') + (player.id === s.id ? ' · Vous' : ''); $('players').append(li); }
-      $('phase').textContent = s.phase === 'running' ? 'Connecté · Les trois marins sont contrôlables par tous.' : s.phase === 'reconnecting' ? 'Reconnexion à l’hôte…' : 'Synchronisation du jeu…';
+      for (const player of s.players) { const li = document.createElement('li'); li.textContent = player.name + (player.host ? ' · Hôte' : '') + (player.id === s.id ? ' · Vous' : '')+(s.match?.stage==='waiting'?(s.match.ready.includes(player.id)?' · Prêt':' · En attente'):''); $('players').append(li); }
+      $('phase').textContent = s.phase === 'running' ? 'Connecté · Les cinq marins sont contrôlables par tous.' : s.phase === 'reconnecting' ? 'Reconnexion à l’hôte…' : 'Synchronisation du jeu…';
+      $('match-lobby').hidden=!s.match;
+      if(s.match){const m=s.match,waiting=m.stage==='waiting';
+        $('match-rules').textContent=waiting?'Un saboteur secret parmi les joueurs. Objectif : survivre '+m.goalDays+' jour(s). Chacun clique sur Prêt avant le lancement.':'Jour '+m.day+'/'+m.goalDays+(m.blocked?' · En attente de reconnexion d’un joueur.':' · '+(m.stage==='finished'?'Traversée terminée.':'Rôles attribués secrètement.'));
+        $('ready-player').hidden=!waiting;$('ready-player').textContent=m.ready.includes(s.id)?'Annuler Prêt':'Prêt';$('ready-player').disabled=s.phase!=='running';
+        $('start-match').hidden=!waiting||s.role!=='host';$('start-match').disabled=s.players.length<2||s.players.some(p=>!m.ready.includes(p.id))||s.phase!=='running';
+        $('private-role').textContent=waiting?'Votre rôle sera révélé uniquement sur votre écran au lancement.':m.role==='saboteur'?'Votre rôle secret : SABOTEUR. Abîmez la coque et endormez un marin par jour.':'Votre rôle secret : ÉQUIPAGE. Gardez le bateau à flot.';
+        if(m.stage==='finished')$('private-role').textContent+=' · Saboteur révélé : '+(s.players.find(p=>p.id===m.revealedSaboteur)?.name||'joueur déconnecté');
+        $('return-lobby').hidden=m.stage!=='finished'||s.role!=='host';
+      }
       message(s.error || 'Connecté à l’équipage.', !!s.error);
     } else if (s.error) message(s.error, s.phase !== 'connecting');
   }
   async function run(action) {
     if (busy) return; busy = true; $('host').disabled = $('join').disabled = true;
     message('Connexion en cours…');
-    try { const result = await action(); if (!result.ok) message(result.error, true); else if(result.role)render(result);else message('Retour au bateau…'); }
+    try { const result = await action(); if (!result.ok) message(result.error, true); else if(result.role)render(result);else if(current?.match)render(current);else message('Retour au bateau…'); }
     catch { message('La connexion n’a pas pu être établie. Vérifiez le réseau et le code de l’hôte.', true); }
     finally { busy = false; $('host').disabled = $('join').disabled = false; }
   }
   $('host-tab').onclick = () => { $('host-panel').hidden = false; $('join-panel').hidden = true; $('host-tab').classList.add('active'); $('join-tab').classList.remove('active'); };
   $('join-tab').onclick = () => { $('host-panel').hidden = true; $('join-panel').hidden = false; $('join-tab').classList.add('active'); $('host-tab').classList.remove('active'); };
-  $('host').onclick = () => run(() => api.host({ name: $('name').value, port: Number($('port').value) }));
+  $('host').onclick = () => run(() => api.host({ name: $('name').value, port: Number($('port').value), traitor:$('traitor-mode').checked, goalDays:Number($('goal-days').value) }));
   $('join').onclick = () => run(() => api.join({ name: $('name').value, invitation: $('invitation').value.trim() }));
+  $('ready-player').onclick=()=>run(()=>api.lobbyReady(!current.match.ready.includes(current.id)));
+  $('start-match').onclick=()=>run(()=>api.startMatch());
+  $('return-lobby').onclick=()=>run(()=>api.returnLobby());
   $('copy').onclick = async () => { const r = await api.copyInvitation(); message(r.ok ? 'Code copié. Envoyez-le aux autres joueurs.' : r.error, !r.ok); };
   $('close').onclick = $('back').onclick = () => api.close();
   $('leave').onclick = () => run(() => api.leave());

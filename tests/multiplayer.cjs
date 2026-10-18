@@ -15,7 +15,7 @@ async function wait(check, timeout=15000) { const end = Date.now()+timeout; whil
 (async()=>{
  try {
   const host = await launch(0); let w = await lobby(host);
-  await w.locator('#name').fill('Capitaine'); await w.locator('#port').fill('0'); await w.locator('#host').click(); await w.locator('#code').waitFor();
+  await w.locator('#name').fill('Capitaine'); await w.locator('#traitor-mode').uncheck(); await w.locator('#port').fill('0'); await w.locator('#host').click(); await w.locator('#code').waitFor();
   const invitation = await w.locator('#code').inputValue(); assert.ok(invitation.startsWith('VAGUE1-')); await w.locator('#back').click();
   const clients=[];
   for(let i=1;i<=4;i++) {

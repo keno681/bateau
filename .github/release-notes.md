@@ -1,13 +1,15 @@
-**Dernière Vague 1.4.0 — UDP 16383 et fichiers modifiables**
+**Dernière Vague 1.5.0 — Salon, saboteur secret et rêves prémonitoires**
 
-- Multijoueur en **UDP sur le port 16383**, comme le numéro et le transport utilisés par Cosmo Wrap.
-- Transfert fiable avec retransmissions, ordre, suppression des doublons, authentification et chiffrement.
-- ZIP avec **Dernière Vague.exe** et les sources accessibles dans **resources/app**, y compris le moteur réseau. Gardez les fichiers extraits ensemble.
-- Exécutable portable autonome également fourni.
-- Jusqu’à cinq joueurs ; modifications Pokéball partagées avec rechargement des écrans et maintien des connexions.
+- Salon avant le départ : 2 à 5 joueurs, bouton **Prêt**, lancement par l’hôte.
+- Un saboteur choisi au hasard ; chaque écran ne voit que son propre rôle.
+- Une avarie de −15 coque et un marin endormi par jour.
+- Le marin dort jusqu’au lendemain et rêve d’un événement qui se produira réellement : accalmie, bourrasque ou banc de poissons.
+- Traversée de 1, 3 ou 5 jours. Victoire de l’équipage s’il tient, du saboteur si le bateau ou l’équipage cède ; révélation à la fin.
+- Rôles, quotas, rêves et connexions conservés pendant les rechargements Pokéball. Identifiant de joueur conservé pour rejoindre après fermeture de l’application invitée.
+- Bateau 3D, huit salles et cinq marins inclus. Mode coopératif classique toujours disponible.
 
-Installez la version 1.4.0 sur tous les PC et créez un nouveau salon : les anciennes invitations TCP ne sont pas compatibles. Autorisez cet exécutable sur le réseau privé dans le pare-feu Windows si nécessaire. Le script Pokéball ne peut pas transformer l’ancien moteur TCP en UDP : il faut d’abord la mise à jour Windows.
+**Installez le moteur 1.5.0 sur tous les PC.** Le script texte seul ne peut pas ajouter ce service à l’ancien moteur 1.4.0. Si les anciens fichiers Pokéball masquent la nouvelle interface, appliquez **SALON-SABOTEUR-POKEBALL.txt** chez l’hôte, ou utilisez F8 → Version d’origine.
 
-Pour modifier manuellement le moteur, fermez l’application puis relancez-la ; les joueurs devront rejoindre à nouveau. Les modifications persistantes Pokéball sont prioritaires sur les fichiers du jeu ; F8 permet de restaurer les sources du dossier.
+Extrayez tout le ZIP puis lancez **Dernière Vague.exe**. Sources modifiables dans **resources/app** ; guide **SABOTEUR.md** et texte Pokéball inclus. UDP 16383 conservé. Programme Windows 10/11 64 bits non signé.
 
-Des essais sur vos deux PC Windows restent nécessaires : UDP ne contourne pas une isolation Wi-Fi ou une adresse inaccessible. Programme Windows 10/11 64 bits non signé.
+Tests avec trois applications Electron sous Linux, vérifications des rôles privés, quotas, rêves, journées, connexions et du rendu WebGL. Les autorisations réseau et l’affichage sur vos PC Windows restent à vérifier.

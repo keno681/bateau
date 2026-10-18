@@ -20,7 +20,7 @@ async function lobby(p) { const opened = p.app.waitForEvent('window'); await p.p
     // Fixed previous release: exercise the actual upgrade, not already-updated sources.
     for (const file of ['index.html', 'style.css', 'game.js']) fs.writeFileSync(path.join(fixture, file), execFileSync('git', ['show', 'v1.4.0:' + file], { cwd: root }));
     const host = await launch(0); assert.equal(await host.page.locator('.crew-card').count(), 3);
-    let w = await lobby(host); await w.locator('#port').fill('0'); await w.locator('#host').click(); await w.locator('#code').waitFor();
+    let w = await lobby(host); await w.locator('#traitor-mode').uncheck(); await w.locator('#port').fill('0'); await w.locator('#host').click(); await w.locator('#code').waitFor();
     const invitation = await w.locator('#code').inputValue(); await w.locator('#back').click();
     const client = await launch(1); w = await lobby(client); await w.locator('#join-tab').click(); await w.locator('#invitation').fill(invitation); await w.locator('#join').click();
     await wait(async () => (await status(client.page)).phase === 'running');
