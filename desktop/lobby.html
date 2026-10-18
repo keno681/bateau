@@ -1,0 +1,11 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Équipage — Multijoueur local</title><link rel="stylesheet" href="lobby.css"><script src="lobby.js" defer></script></head><body><main>
+<header><div><small>DERNIÈRE VAGUE · COOPÉRATION</small><h1>À cinq, on tient.</h1></div><button id="close" aria-label="Fermer">×</button></header>
+<p>Un seul bateau, un équipage partagé. Jusqu’à cinq personnes, hôte compris.</p>
+<p id="status" role="status">Choisissez Héberger ou Rejoindre.</p>
+<section id="setup"><label for="name">Votre prénom ou pseudo</label><input id="name" maxlength="24" value="Marin" autocomplete="nickname">
+<div class="tabs"><button id="host-tab" class="active">Héberger</button><button id="join-tab">Rejoindre</button></div>
+<div id="host-panel"><p>L’hôte laisse le jeu ouvert et partage son code d’invitation avec les autres joueurs.</p><label for="port">Port local</label><input id="port" type="number" min="1024" max="65535" value="43765"><button id="host" class="primary">Créer la partie</button></div>
+<div id="join-panel" hidden><label for="invitation">Code d’invitation de l’hôte</label><textarea id="invitation" rows="4" spellcheck="false" placeholder="VAGUE1-…"></textarea><p>Les fichiers du jeu et les modifications Pokéball de l’hôte seront chargés automatiquement dans cette partie.</p><button id="join" class="primary">Rejoindre la partie</button></div></section>
+<section id="connected" hidden><h2 id="room-title">Équipage</h2><div id="share" hidden><label for="code">Code à envoyer aux autres joueurs</label><textarea id="code" rows="3" readonly spellcheck="false"></textarea><button id="copy">Copier le code d’invitation</button><p id="address"></p></div><ul id="players"></ul><p id="phase"></p><button id="back" class="primary">Retourner au bateau</button><button id="leave" class="secondary">Quitter la partie</button></section>
+<footer><strong>Pour une connexion locale fiable</strong><br>Utilisez la même version du jeu sur le même réseau Wi-Fi ou Ethernet. Le Wi-Fi invité peut isoler les appareils. Si Windows le demande, autorisez le jeu sur le réseau privé.<br>La Pokéball de l’hôte met à jour tous les écrans. La connexion reste dans le moteur pendant les redémarrages.</footer>
+</main></body></html>

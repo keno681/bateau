@@ -56,3 +56,9 @@ node tests/desktop.cjs
 ```
 
 Les tests couvrent les écritures réelles, les échecs sans application partielle, la persistance entre lancements, le redémarrage, la conservation de la partie, l’accès IPC, la restauration et l’ouverture avec F8 depuis une page sans bouton Pokéball. Les tests Electron demandent Playwright disponible dans l’environnement.
+
+## Parties multijoueurs (Windows 1.3.0)
+
+L’hôte applique les scripts à tous les écrans de sa partie. Les invités ne peuvent pas valider de patch dans le salon. Pour rester compatible avec ce mode, conserver l’intégration `vague-network-v1` dans game.js et le bouton `id="network"` dans index.html ; le moteur refuse un bundle sans ces points d’entrée. Préserver aussi les appels de synchronisation et de signalement du chargement lors d’un remplacement complet de game.js. Une modification qui empêche les écrans de signaler leur chargement est annulée automatiquement.
+
+Le moteur de connexion et l’atelier protégés ne font pas partie des fichiers modifiables. Voir [MULTIJOUEUR.md](MULTIJOUEUR.md) pour les limites, la conservation des connexions et le script texte de mise à jour.

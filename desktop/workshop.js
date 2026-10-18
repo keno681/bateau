@@ -1,13 +1,13 @@
 'use strict';
 (() => {
   const api = window.vagueWorkshop, $ = id => document.getElementById(id), editor = $('script');
-  let busy = false, timer, modified = false, previous = false, warning = false;
+  let busy = false, timer, modified = false, previous = false, warning = false, readOnly = false;
   const sample = JSON.stringify({ format: 'derniere-vague-patch-v1', title: 'Un cap couleur cuivre', changes: [{ file: 'style.css', append: '\n/* Ajout depuis la Pokéball */\nh1 { color: #f1ae65; }\n' }] }, null, 2);
   function message(text, error = false) { $('status').textContent = text; $('status').className = error ? 'error' : 'success'; }
   function setBusy(value) {
     busy = value; editor.disabled = value;
-    for (const id of ['apply', 'example', 'close']) $(id).disabled = value;
-    $('restore').disabled = value || !(modified || warning); $('undo').disabled = value || !previous;
+    for (const id of ['apply', 'example', 'close']) $(id).disabled = value || readOnly && id !== 'close';
+    $('restore').disabled = value || readOnly || !(modified || warning); $('undo').disabled = value || readOnly || !previous;
   }
   function lines() {
     const count = editor.value.split('\n').length;
@@ -47,8 +47,9 @@
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && !busy) { event.preventDefault(); $('close').click(); } });
   api.status().then(result => {
     if (!result.ok) throw new Error(result.error);
+    readOnly = result.network?.role === 'client';
     editor.value = result.draft; modified = result.modified; previous = result.previous; warning = !!result.warning;
     $('current').textContent = 'Version ' + result.appVersion + ' · ' + result.title;
-    lines(); setBusy(false); if (result.warning) message(result.warning, true); editor.focus();
+    lines(); setBusy(false); if (readOnly) message('Les modifications Pokéball sont appliquées par l’hôte à tous les joueurs.'); else if (result.warning) message(result.warning, true); editor.focus();
   }).catch(error => { message(error.message, true); setBusy(true); $('close').disabled = false; $('close').onclick = () => api.close(); });
 })();

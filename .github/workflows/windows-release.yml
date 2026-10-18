@@ -29,7 +29,7 @@ jobs:
       - name: Check JavaScript
         run: npm run check
       - name: Test persistent modifications
-        run: node --test tests/patch-store.test.cjs
+        run: node --test tests/patch-store.test.cjs tests/room.test.cjs
       - name: Build portable Windows executable
         run: npm run build:windows
       - name: Create checksum and publish release
@@ -49,16 +49,21 @@ jobs:
           $folder = Join-Path $exe.DirectoryName 'zip/Derniere-Vague'
           New-Item -ItemType Directory -Force $folder | Out-Null
           Copy-Item -Path @($exe.FullName, $checksum) -Destination $folder
+          Copy-Item -Path 'patches/MULTIJOUEUR-5-JOUEURS-POKEBALL.txt' -Destination $folder
+          Copy-Item -Path 'MULTIJOUEUR.md' -Destination $folder
           Copy-Item -Path 'patches/exemple-couleur.json' -Destination (Join-Path $folder 'EXEMPLE-POKEBALL.json')
           @'
           DERNIÈRE VAGUE — Windows 10/11, 64 bits
           Faites un clic droit sur le ZIP puis « Extraire tout ».
           Ouvrez le dossier extrait puis double-cliquez sur le fichier .exe.
           La Pokéball ouvre l’atelier : collez un script JSON puis cliquez sur Valider et redémarrer le jeu.
+          Multijoueur : Héberger puis partager le code. Les invités utilisent Rejoindre sur le même réseau privé.
+          Autorisez le jeu sur le réseau privé si le pare-feu Windows le demande.
+          Les scripts de l’hôte sont partagés avec tous, sans couper les connexions.
           Les modifications sont conservées sur ce PC. F8 permet de revenir à la version d’origine.
           EXEMPLE-POKEBALL.json contient un premier script à copier dans l’atelier.
           F11 : plein écran. Programme non signé.
           '@ | Set-Content (Join-Path $folder 'LISEZ-MOI.txt') -Encoding utf8
           Compress-Archive -Path $folder -DestinationPath $zip
-          gh release create "$env:GITHUB_REF_NAME" "$($exe.FullName)" "$checksum" "$zip" --verify-tag --title "Dernière Vague $env:GITHUB_REF_NAME — Windows" --notes-file '.github/release-notes.md'
+          gh release create "$env:GITHUB_REF_NAME" "$($exe.FullName)" "$checksum" "$zip" 'patches/MULTIJOUEUR-5-JOUEURS-POKEBALL.txt' --verify-tag --title "Dernière Vague $env:GITHUB_REF_NAME — Windows" --notes-file '.github/release-notes.md'
           if ($LASTEXITCODE -ne 0) { throw 'GitHub release publication failed.' }

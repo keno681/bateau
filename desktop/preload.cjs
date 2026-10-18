@@ -15,3 +15,26 @@ contextBridge.exposeInMainWorld('vagueWorkshop', Object.freeze({
   undo: () => ipcRenderer.invoke('workshop:undo'),
   close: () => ipcRenderer.invoke('workshop:close')
 }));
+
+function subscribe(channel, listener) {
+  if (typeof listener !== 'function') return;
+  const handler = (_event, value) => listener(value);
+  ipcRenderer.on(channel, handler);
+  return () => ipcRenderer.removeListener(channel, handler);
+}
+contextBridge.exposeInMainWorld('vagueNetwork', Object.freeze({
+  open: () => ipcRenderer.invoke('network:open'),
+  bootstrap: () => ipcRenderer.invoke('network:bootstrap'),
+  publish: (value, revision) => ipcRenderer.invoke('network:publish', value, revision),
+  ready: revision => ipcRenderer.invoke('network:ready', revision),
+  command: command => ipcRenderer.invoke('network:command', command),
+  status: () => ipcRenderer.invoke('network:status'),
+  host: options => ipcRenderer.invoke('network:host', options),
+  join: options => ipcRenderer.invoke('network:join', options),
+  leave: () => ipcRenderer.invoke('network:leave'),
+  close: () => ipcRenderer.invoke('network:close'),
+  copyInvitation: () => ipcRenderer.invoke('network:copy'),
+  onStatus: listener => subscribe('network:status', listener),
+  onSnapshot: listener => subscribe('network:snapshot', listener),
+  onCommand: listener => subscribe('network:command', listener)
+}));
