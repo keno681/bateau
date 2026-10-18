@@ -1,6 +1,7 @@
 'use strict';
 const net = require('node:net');
 const os = require('node:os');
+const udp = require('./udp-stream.cjs');
 const crypto = require('node:crypto');
 const { EventEmitter } = require('node:events');
 const FILES = ['index.html', 'style.css', 'game.js'];
@@ -52,7 +53,8 @@ function wire(socket, secret, onMessage, onClose) {
 function parseInvitation(text) {
   if (typeof text !== 'string' || text.length > 1600 || !text.trim().startsWith('VAGUE1-')) throw new Error('Collez le code d’invitation complet fourni par l’hôte (VAGUE1-…).');
   let value; try { value = JSON.parse(Buffer.from(text.trim().slice(7), 'base64url').toString('utf8')); } catch { throw new Error('Code d’invitation illisible.'); }
-  if (value.v !== 1 || !Array.isArray(value.addresses) || !value.addresses.length || value.addresses.length > 8 || !value.addresses.every(a => typeof a === 'string' && net.isIPv4(a)) || !Number.isInteger(value.port) || value.port < 1 || value.port > 65535 || typeof value.secret !== 'string' || !/^[\w-]{32}$/.test(value.secret)) throw new Error('Code d’invitation invalide.');
+  if (value?.v === 1) throw new Error('Ce code utilise l’ancien réseau TCP. Installez la version UDP 1.4.0 sur tous les PC et créez un nouveau salon.');
+  if (value.v !== 2 || !Array.isArray(value.addresses) || !value.addresses.length || value.addresses.length > 8 || !value.addresses.every(a => typeof a === 'string' && net.isIPv4(a)) || !Number.isInteger(value.port) || value.port < 1 || value.port > 65535 || typeof value.secret !== 'string' || !/^[\w-]{32}$/.test(value.secret)) throw new Error('Code d’invitation invalide.');
   return value;
 }
 function addresses() {
@@ -62,7 +64,7 @@ function addresses() {
 }
 class Room extends EventEmitter {
   constructor({ version, validateFiles, barrierTimeout = 12000 } = {}) {
-    super(); this.version = version || '1.3.0'; this.validateFiles = validateFiles || bundle; this.barrierTimeout = barrierTimeout;
+    super(); this.version = version || '1.4.0'; this.validateFiles = validateFiles || bundle; this.barrierTimeout = barrierTimeout;
     this.role = 'offline'; this.phase = 'idle'; this.revision = 0; this.files = null; this.runtime = null; this.players = [];
     this.id = crypto.randomUUID(); this.peers = new Map(); this.connections = new Set(); this.server = null; this.link = null; this.closed = false; this.pending = null; this.error = null; this.accepted = 0;
   }
@@ -83,13 +85,13 @@ class Room extends EventEmitter {
     const checked = this.checkFiles(files);
     if (!this.runtime) throw new Error('Le jeu se charge encore. Fermez le salon puis réessayez.');
     this.files = checked; this.name = cleanName(name); this.secret = crypto.randomBytes(24).toString('base64url');
-    this.closed = false; this.server = net.createServer(socket => this.accept(socket));
+    this.closed = false; this.server = udp.createServer(this.secret, socket => this.accept(socket));
     try {
       await new Promise((resolve, reject) => { const fail = e => reject(e); this.server.once('error', fail); this.server.listen(port, '0.0.0.0', () => { this.server.removeListener('error', fail); resolve(); }); });
     } catch (error) { this.server = null; this.files = null; throw new Error(error.code === 'EADDRINUSE' ? 'Ce port est déjà utilisé. Choisissez un autre port.' : 'Impossible d’héberger : ' + error.message); }
     this.server.on('error', e => { this.error = e.message; this.notify(); });
     this.port = this.server.address().port; this.addresses = addresses();
-    this.invitation = 'VAGUE1-' + Buffer.from(JSON.stringify({ v: 1, addresses: this.addresses, port: this.port, secret: this.secret })).toString('base64url');
+    this.invitation = 'VAGUE1-' + Buffer.from(JSON.stringify({ v: 2, addresses: this.addresses, port: this.port, secret: this.secret })).toString('base64url');
     this.role = 'host'; this.phase = 'running'; this.revision = 1; this.error = null; this.roster();
     this.heartbeat = setInterval(() => { for (const peer of this.peers.values()) { if (Date.now()-peer.lastSeen>15000) peer.link.socket.destroy(); else peer.link.send({ type: 'ping' }); } }, 3000); this.heartbeat.unref();
     return this.status(true);
@@ -139,9 +141,9 @@ class Room extends EventEmitter {
   }
   connectAddress(address) {
     return new Promise((resolve, reject) => {
-      const socket = net.createConnection({ host: address, port: this.invite.port }); let welcomed = false, settled = false;
+      const socket = udp.createConnection({ host: address, port: this.invite.port, secret: this.invite.secret }); let welcomed = false, settled = false;
       const finish = error => { if (settled) return; settled = true; clearTimeout(timer); if (error) { socket.destroy(); reject(error); } else resolve(); };
-      const timer = setTimeout(() => finish(new Error('Délai de connexion dépassé.')), 2500); timer.unref();
+      const timer = setTimeout(() => finish(new Error('Délai de connexion dépassé.')), 8000); timer.unref();
       const link = wire(socket, this.invite.secret, message => {
         try {
           if (message.type === 'reject') { const error = new Error(message.error); error.rejected = true; finish(error); return; }

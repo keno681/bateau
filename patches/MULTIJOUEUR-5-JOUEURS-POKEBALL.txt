@@ -1,6 +1,6 @@
 {
   "format": "derniere-vague-patch-v1",
-  "title": "Multijoueur 5 personnes — moteur Windows 1.3.0 nécessaire",
+  "title": "Multijoueur 5 personnes — moteur Windows 1.4.0 nécessaire",
   "changes": [
     {
       "file": "index.html",

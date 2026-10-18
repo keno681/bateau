@@ -57,3 +57,7 @@ test('invitation erronée et port occupé : erreurs lisibles', async t => {
   const i = parseInvitation(invite(host)); i.secret = 'x'.repeat(32);
   await assert.rejects(r.join({ invitation: 'VAGUE1-'+Buffer.from(JSON.stringify(i)).toString('base64url') }), /Hôte introuvable/);
 });
+test('fermeture du salon UDP : les invités retournent au mode hors ligne', async t => {
+  const { host, clients } = await fixture(t, 1);
+  await host.leave(); await wait(() => clients[0].role === 'offline');
+});
