@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Pokéball — Atelier du jeu</title><link rel="stylesheet" href="workshop.css"><script defer src="workshop.js"></script></head>
+<body><main>
+<header><span class="ball" aria-hidden="true">●</span><div><small>POKÉBALL · ATELIER DU JEU</small><h1>Modifier le jeu</h1></div><button id="close" class="close" aria-label="Fermer l’atelier">×</button></header>
+<p>Collez le script que je vous ai fourni, puis validez pour appliquer les changements. Ils seront conservés sur ce PC, avec votre partie.</p>
+<div class="version"><span id="current">Chargement…</span><button id="example" class="link">Essayer un exemple</button></div>
+<label for="script">Votre script de modification <span>FORMAT JSON</span></label>
+<div class="editor"><div id="lines" aria-hidden="true">1</div><textarea id="script" maxlength="500000" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Collez ici le script complet, avec ses accolades…"></textarea></div>
+<div class="draft"><span id="draft-status">Brouillon prêt</span><span id="line-count">1 ligne</span></div>
+<p id="status" role="status" aria-live="polite">Les modifications sont vérifiées avant d’être enregistrées.</p>
+<button id="apply" class="primary">Valider et redémarrer le jeu</button>
+<div class="recovery"><button id="undo" class="secondary" disabled>Version précédente</button><button id="restore" class="secondary" disabled>Revenir à la version d’origine</button></div>
+<footer>Fichiers modifiables : HTML, CSS et JavaScript du jeu.<br>Vous pouvez toujours rouvrir cet atelier avec <strong>F8</strong> ou le menu <strong>Jeu</strong>.</footer>
+</main></body></html>

@@ -1,0 +1,10 @@
+{
+  "format": "derniere-vague-patch-v1",
+  "title": "Un cap couleur cuivre",
+  "changes": [
+    {
+      "file": "style.css",
+      "append": "\n/* Ajout depuis la Pokéball */\nh1 { color: #f1ae65; }\n"
+    }
+  ]
+}

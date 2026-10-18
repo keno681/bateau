@@ -45,7 +45,7 @@ Le test utilise une horloge accélérée et la préférence de réduction des mo
 
 Les versions publiées sont disponibles dans [les Releases GitHub](https://github.com/keno681/bateau/releases). Le workflow `.github/workflows/windows-release.yml` compile et publie un exécutable portable lorsqu’un tag `v*` est envoyé. Il utilise uniquement le jeton automatique du dépôt avec la permission `contents: write`, sans secret supplémentaire.
 
-La version portable est produite dans `dist/Derniere-Vague-1.1.0-Windows-x64.exe`. Elle contient le jeu et son moteur : aucun autre fichier, navigateur, Python ou connexion Internet n’est nécessaire pour jouer. Copier l’exécutable sur un PC Windows 10/11 en 64 bits puis le lancer par double-clic. F11 active/désactive le plein écran ; Échap quitte le plein écran.
+La version portable est produite dans `dist/Derniere-Vague-1.2.0-Windows-x64.exe`. Elle contient le jeu et son moteur : aucun autre fichier, navigateur, Python ou connexion Internet n’est nécessaire pour jouer. Copier l’exécutable sur un PC Windows 10/11 en 64 bits puis le lancer par double-clic. F11 active/désactive le plein écran ; Échap quitte le plein écran.
 
 Le fichier n’est pas signé avec un certificat d’éditeur. Les sauvegardes restent dans le profil local de l’utilisateur Windows et ne sont pas partagées avec la version navigateur ni entre différents PC. La compilation et l’archive ont été contrôlées sous Linux ; le lancement de l’exécutable sur Windows reste à vérifier.
 
@@ -79,10 +79,12 @@ Les vérifications TLS et les sommes de contrôle des téléchargements restent 
 
 Avec Playwright disponible, `node tests/desktop.cjs` teste le chargement dans Electron, la pêche, la sauvegarde et l’isolation du rendu. Sous Linux, le test utilise le mode headless et un profil temporaire. Ces tests ne constituent pas un lancement du binaire Windows.
 
-## Pokéball : carnet de code
+## Pokéball : modifier les fichiers du jeu
 
-La Pokéball en bas à droite ouvre un carnet de code. La traversée est mise en pause pendant l’écriture, puis retrouve son état précédent à la fermeture. Le carnet propose des numéros de ligne, une indentation de deux espaces avec Tab et l’enregistrement avec Ctrl+S (ou Cmd+S).
+Dans l’application Windows, la Pokéball ouvre un atelier où coller les scripts de modification fournis. Le bouton **Valider et redémarrer le jeu** vérifie le script, enregistre de vrais fichiers HTML/CSS/JavaScript modifiés et recharge le jeu. Les changements restent présents au prochain lancement et la partie est conservée.
 
-Le texte est aussi enregistré automatiquement sur le même appareil et conservé séparément de la partie : recommencer une traversée ne l’efface pas. **Le code du carnet n’est pas encore exécuté** : cet espace prépare les futures fonctionnalités. L’état de sauvegarde indique si le stockage local est indisponible.
+**Essayer un exemple** permet de tester un changement de couleur. Les boutons **Version précédente** et **Revenir à la version d’origine** restaurent les fichiers précédents ou intégrés. F8 et le menu **Jeu → Atelier Pokéball…** restent disponibles même si une modification a supprimé le bouton du jeu.
 
-`node tests/notebook.cjs` vérifie le carnet dans Electron, y compris la persistance, la pause, le format mobile et le comportement quand le stockage est indisponible. Les nouvelles Releases contiennent le `.exe` et le ZIP Windows ensemble.
+Les modifications sont enregistrées dans le profil local de l’utilisateur et ne changent pas les fichiers intégrés au `.exe` ni ceux de GitHub. Dans le navigateur, le carnet reste un brouillon. Voir [le format des scripts et les détails de récupération](PATCHES.md).
+
+Tests du moteur : `node --test tests/patch-store.test.cjs`. Test de l’atelier Electron : `node tests/notebook.cjs`. Les Releases contiennent le `.exe`, le ZIP Windows, les instructions et un exemple de script.

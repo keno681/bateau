@@ -28,6 +28,8 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Check JavaScript
         run: npm run check
+      - name: Test persistent modifications
+        run: node --test tests/patch-store.test.cjs
       - name: Build portable Windows executable
         run: npm run build:windows
       - name: Create checksum and publish release
@@ -47,12 +49,14 @@ jobs:
           $folder = Join-Path $exe.DirectoryName 'zip/Derniere-Vague'
           New-Item -ItemType Directory -Force $folder | Out-Null
           Copy-Item -Path @($exe.FullName, $checksum) -Destination $folder
+          Copy-Item -Path 'patches/exemple-couleur.json' -Destination (Join-Path $folder 'EXEMPLE-POKEBALL.json')
           @'
           DERNIÈRE VAGUE — Windows 10/11, 64 bits
           Faites un clic droit sur le ZIP puis « Extraire tout ».
           Ouvrez le dossier extrait puis double-cliquez sur le fichier .exe.
-          La Pokéball en bas à droite ouvre votre carnet de code.
-          Le texte est sauvegardé localement ; il ne s’exécute pas encore.
+          La Pokéball ouvre l’atelier : collez un script JSON puis cliquez sur Valider et redémarrer le jeu.
+          Les modifications sont conservées sur ce PC. F8 permet de revenir à la version d’origine.
+          EXEMPLE-POKEBALL.json contient un premier script à copier dans l’atelier.
           F11 : plein écran. Programme non signé.
           '@ | Set-Content (Join-Path $folder 'LISEZ-MOI.txt') -Encoding utf8
           Compress-Archive -Path $folder -DestinationPath $zip

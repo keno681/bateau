@@ -21,13 +21,13 @@
 <dialog id="welcome"><div class="modal-eyebrow">BIENVENUE À BORD DE L’ESPÉRANCE</div><h2>La mer n’attendra pas.</h2><p>La tempête arrive. Aidez votre équipage à traverser la journée et à garder le bateau à flot.</p><div class="tutorial-steps"><div><b>01</b><span><strong>Choisissez un marin</strong>Son humeur change chaque jour et influence sa vitesse de travail.</span></div><div><b>02</b><span><strong>Récupérez ses objets</strong>Mécano : pièces. Cuisinier : provisions. Pêcheur : appâts.</span></div><div><b>03</b><span><strong>Faites vivre le bateau</strong>Réparez la coque, pêchez, puis cuisinez. Tenez jusqu’à 18:00 !</span></div></div><p class="modal-note">Une journée dure 2 min 20. Vous pouvez mettre en pause à tout moment.<br>Les personnages et illustrations sont originaux.</p><button id="start" class="primary">Prendre la barre <span>→</span></button></dialog>
 <dialog id="result"><div class="modal-eyebrow" id="result-eyebrow"></div><h2 id="result-title"></h2><p id="result-description"></p><div id="result-stats" class="result-stats"></div><button id="next-day" class="primary"></button></dialog>
 <dialog id="confirm-reset"><div class="modal-eyebrow">NOUVELLE TRAVERSÉE</div><h2>Repartir de l’aube ?</h2><p>Cette action remplace votre sauvegarde locale par une nouvelle partie.</p><div class="modal-actions"><button id="cancel-reset" class="secondary">Garder ma partie</button><button id="confirm-new" class="primary">Recommencer</button></div></dialog>
-<button id="pokeball" class="pokeball-button" aria-label="Ouvrir le carnet de code" title="Carnet de code" aria-haspopup="dialog"><span class="pokeball-art" aria-hidden="true"><span></span></span><span class="pokeball-caption">CODE</span></button>
+<button id="pokeball" class="pokeball-button" aria-label="Ouvrir la Pokéball" title="Atelier Pokéball" aria-haspopup="dialog"><span class="pokeball-art" aria-hidden="true"><span></span></span><span class="pokeball-caption">CODE</span></button>
 <dialog id="code-notebook" aria-labelledby="code-title">
   <div class="notebook-header"><div><div class="modal-eyebrow">ATELIER DU BORD</div><h2 id="code-title">Carnet de code</h2></div><button id="close-code" class="icon-button" aria-label="Fermer le carnet de code">×</button></div>
-  <p id="code-description">Écrivez ici les lignes de code que nous ajouterons au jeu. Ce carnet conserve votre texte ; les lignes ne sont pas encore exécutées.</p>
+  <p id="code-description">Dans la version Windows, la Pokéball ouvre l’atelier pour modifier les fichiers et redémarrer le jeu. Dans le navigateur, ce carnet conserve votre brouillon.</p>
   <label class="code-label" for="code-input">Vos lignes de code</label>
   <div class="code-editor"><div id="code-lines" aria-hidden="true">1</div><textarea id="code-input" spellcheck="false" autocapitalize="off" autocomplete="off" maxlength="200000" aria-describedby="code-description" placeholder="// Nos prochaines lignes de code…"></textarea></div>
   <div class="code-footer"><span id="code-save-status" role="status">Prêt à écrire</span><span id="code-line-count">1 ligne</span></div>
-  <button id="save-code" class="primary">Enregistrer et retourner au bateau →</button>
+  <button id="save-code" class="primary">Enregistrer le brouillon et retourner au bateau →</button>
 </dialog>
 </body></html>

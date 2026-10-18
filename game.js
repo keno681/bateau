@@ -101,7 +101,12 @@ function saveCode(){
 }
 try{codeInput.value=localStorage.getItem(CODE_KEY)||'';}catch{$('code-save-status').textContent='Stockage local indisponible';}
 updateCodeLines();
-$('pokeball').onclick=()=>{
+if(window.vagueWorkshop){
+ let nativeWasPaused=true;
+ window.vagueWorkshop.onVisibility(open=>{if(open){nativeWasPaused=paused;setPause(true);save();}else setPause(nativeWasPaused);});
+}
+$('pokeball').onclick=async()=>{
+ if(window.vagueWorkshop){try{const result=await window.vagueWorkshop.open(codeInput.value);if(!result.ok)toast(result.error);}catch{toast('Impossible d’ouvrir l’atelier. Essayez le menu Jeu ou F8.');}return;}
  codeWasPaused=paused;setPause(true);$('code-notebook').showModal();$('pause-shade').hidden=true;codeInput.focus();
 };
 function closeCode(){saveCode();$('code-notebook').close();setPause(codeWasPaused);$('pokeball').focus();}

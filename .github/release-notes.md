@@ -1,9 +1,11 @@
-**Dernière Vague — Pokéball et carnet de code**
+**Dernière Vague 1.2.0 — appliquer vos scripts dans la Pokéball**
 
-Une Pokéball en bas à droite ouvre un carnet de code avec numéros de ligne. La partie se met en pause pendant l’écriture. Le texte est enregistré automatiquement sur votre appareil et conservé lors d’une nouvelle traversée.
+1. Demandez une modification du jeu et copiez le script JSON fourni.
+2. Ouvrez la Pokéball dans le jeu et collez le script.
+3. Cliquez sur **Valider et redémarrer le jeu**.
 
-Ce carnet prépare les futures modifications : les lignes sont sauvegardées, mais ne sont pas encore exécutées dans le jeu.
+Les fichiers HTML, CSS et JavaScript modifiés sont enregistrés sur votre PC. Le jeu redémarre avec vos changements, en conservant votre partie. Un exemple prêt à coller change la couleur du titre.
 
-Téléchargez le fichier **Windows-x64.zip**, faites clic droit → **Extraire tout**, puis lancez le `.exe` du dossier extrait. Vous pouvez aussi télécharger le `.exe` seul. Windows 10/11, 64 bits. F11 : plein écran.
+L’atelier offre aussi **Version précédente**, **Revenir à la version d’origine**, et l’accès **F8** ou **Jeu → Atelier Pokéball…**, même si un script a retiré le bouton du jeu.
 
-Le programme est non signé. Les sauvegardes sont locales à votre PC. L’application et le carnet sont testés sous Linux avec Electron ; le fichier Windows est compilé par GitHub Actions, sans test interactif sous Windows.
+Téléchargez le ZIP Windows, faites clic droit → **Extraire tout**, puis lancez le `.exe`. Windows 10/11, 64 bits. Le programme est non signé. Les modifications sont locales à votre profil et ne modifient pas le dépôt GitHub. Les essais fonctionnels ont été réalisés avec Electron sous Linux ; la compilation s’effectue sur Windows.
