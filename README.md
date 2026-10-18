@@ -45,7 +45,7 @@ Le test utilise une horloge accélérée et la préférence de réduction des mo
 
 Les versions publiées sont disponibles dans [les Releases GitHub](https://github.com/keno681/bateau/releases). Le workflow `.github/workflows/windows-release.yml` compile et publie un exécutable portable lorsqu’un tag `v*` est envoyé. Il utilise uniquement le jeton automatique du dépôt avec la permission `contents: write`, sans secret supplémentaire.
 
-La version portable est produite dans `dist/Derniere-Vague-1.3.0-Windows-x64.exe`. Elle contient le jeu et son moteur : aucun autre fichier, navigateur, Python ou connexion Internet n’est nécessaire pour jouer. Copier l’exécutable sur un PC Windows 10/11 en 64 bits puis le lancer par double-clic. F11 active/désactive le plein écran ; Échap quitte le plein écran.
+La version portable est produite dans `dist/Derniere-Vague-1.3.1-Windows-x64.exe`. Elle contient le jeu et son moteur : aucun autre fichier, navigateur, Python ou connexion Internet n’est nécessaire pour jouer. Copier l’exécutable sur un PC Windows 10/11 en 64 bits puis le lancer par double-clic. F11 active/désactive le plein écran ; Échap quitte le plein écran.
 
 Le fichier n’est pas signé avec un certificat d’éditeur. Les sauvegardes restent dans le profil local de l’utilisateur Windows et ne sont pas partagées avec la version navigateur ni entre différents PC. La compilation et l’archive ont été contrôlées sous Linux ; le lancement de l’exécutable sur Windows reste à vérifier.
 
@@ -91,6 +91,6 @@ Tests du moteur : `node --test tests/patch-store.test.cjs`. Test de l’atelier 
 
 ## Multijoueur local — 5 personnes
 
-La version Windows 1.3.0 propose **Multijoueur → Héberger / Rejoindre** avec un code d’invitation à copier. L’hôte et quatre invités partagent le bateau et les trois marins. Les modifications Pokéball de l’hôte sont chargées chez tous les joueurs, avec rechargement des écrans et conservation des sockets, des identifiants et de la progression.
+La version Windows 1.3.1 propose **Multijoueur → Héberger / Rejoindre** avec un code d’invitation à copier. L’hôte et quatre invités partagent le bateau et les trois marins. Les modifications Pokéball de l’hôte sont chargées chez tous les joueurs, avec rechargement des écrans et conservation des sockets, des identifiants et de la progression.
 
-Voir [les instructions de connexion et de dépannage](MULTIJOUEUR.md). Le [script texte prêt à copier](patches/MULTIJOUEUR-5-JOUEURS-POKEBALL.txt) est inclus dans le ZIP. Il exige le nouveau moteur Windows 1.3.0 et remplace les trois fichiers du jeu. Le ZIP possède déjà le mode multijoueur. Cette version cible le même réseau local, sans relais Internet.
+Voir [les instructions de connexion et de dépannage](MULTIJOUEUR.md). Le [script texte prêt à copier](patches/MULTIJOUEUR-5-JOUEURS-POKEBALL.txt) est inclus dans le ZIP. Il exige le nouveau moteur Windows 1.3.1 et remplace les trois fichiers du jeu. Le ZIP possède déjà le mode multijoueur. Cette version cible le même réseau local, sans relais Internet.

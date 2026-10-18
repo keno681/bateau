@@ -1,15 +1,9 @@
-**Dernière Vague 1.3.0 — Multijoueur local, jusqu’à cinq personnes**
+**Dernière Vague 1.3.1 — Port multijoueur 16383**
 
-- **Héberger** une partie et partager un code d’invitation à copier.
-- **Rejoindre** avec ce code, sur le même Wi-Fi privé ou réseau Ethernet.
-- Partager le bateau, les marins, les objets et la journée avec l’hôte et quatre invités.
-- Appliquer les scripts Pokéball de l’hôte chez tous les joueurs : les écrans redémarrent avec les mêmes connexions, identifiants et travaux en cours.
-- Revenir à la version précédente si une modification ne démarre pas.
+Le port par défaut est maintenant **TCP 16383**, au lieu de TCP 43765, dans le moteur et le salon. Cosmo Wrap utilise le même numéro avec UDP ; le bateau conserve TCP.
 
-Téléchargez le **ZIP Windows 1.3.0**, extrayez-le puis lancez le `.exe`. Cette mise à jour du moteur est nécessaire : le script Pokéball seul ne peut pas ajouter le service réseau à l’ancien exécutable.
+Installez cette version sur tous les PC, créez une nouvelle partie et partagez son nouveau code d’invitation. Le port reste modifiable avant la création du salon.
 
-Le fichier **MULTIJOUEUR-5-JOUEURS-POKEBALL.txt** est aussi fourni séparément et dans le ZIP, prêt à copier. Il met les trois fichiers du jeu à jour et nécessite le moteur 1.3.0. Le nouveau ZIP contient déjà le mode multijoueur.
+Autorisez cet exécutable sur le réseau privé dans le pare-feu Windows si nécessaire. Changer le port ne garantit pas de résoudre une adresse inaccessible ou l’isolation Wi-Fi.
 
-Si Windows le demande, autorisez le jeu dans le pare-feu pour le réseau privé. Le mode vise le réseau local, sans relais Internet. Seul l’hôte valide les modifications partagées. L’hôte doit laisser son application ouverte.
-
-Les tests couvrent cinq applications Electron et de vrais sockets locaux sous Linux ; un essai sur vos PC Windows reste nécessaire pour leurs autorisations réseau. La compilation se fait sur Windows. Programme non signé, pour Windows 10/11 64 bits.
+Multijoueur local jusqu’à cinq personnes et synchronisation Pokéball conservés. Programme Windows 10/11 64 bits non signé.

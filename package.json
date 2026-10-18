@@ -1,6 +1,6 @@
 {
   "name": "derniere-vague",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "private": true,
   "description": "Un jeu de survie en mer : trois marins, un bateau, une tempête.",
   "author": "Dernière Vague",
@@ -46,7 +46,7 @@
     "portable": {
       "artifactName": "Derniere-Vague-${version}-Windows-x64.exe",
       "requestExecutionLevel": "user",
-      "unpackDirName": "DerniereVague-1.3.0"
+      "unpackDirName": "DerniereVague-1.3.1"
     }
   }
 }

@@ -77,7 +77,7 @@ class Room extends EventEmitter {
     this.broadcast({ type: 'roster', players: this.players }); this.notify();
   }
   broadcast(message) { for (const peer of this.peers.values()) peer.link.send(message); }
-  async host({ name, port = 43765, files } = {}) {
+  async host({ name, port = 16383, files } = {}) {
     if (this.role !== 'offline') throw new Error('Quittez la partie actuelle avant d’en héberger une autre.');
     if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('Port invalide.');
     const checked = this.checkFiles(files);

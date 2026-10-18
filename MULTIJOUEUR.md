@@ -1,6 +1,6 @@
 # Multijoueur local — jusqu’à cinq personnes
 
-Utiliser **Dernière Vague 1.3.0 sur tous les PC**. L’hôte et quatre invités partagent le même bateau, les trois marins, les objets, les réserves et la progression de la journée. Chaque joueur peut choisir un marin et lui donner un ordre ; le moteur de l’hôte empêche deux ordres simultanés sur un marin déjà occupé. La pause, la journée suivante et les modifications Pokéball sont pilotées par l’hôte.
+Utiliser **Dernière Vague 1.3.1 sur tous les PC**. L’hôte et quatre invités partagent le même bateau, les trois marins, les objets, les réserves et la progression de la journée. Chaque joueur peut choisir un marin et lui donner un ordre ; le moteur de l’hôte empêche deux ordres simultanés sur un marin déjà occupé. La pause, la journée suivante et les modifications Pokéball sont pilotées par l’hôte.
 
 ## Héberger et rejoindre
 
@@ -10,7 +10,7 @@ Utiliser **Dernière Vague 1.3.0 sur tous les PC**. L’hôte et quatre invités
 4. Chaque invité ouvre **Multijoueur → Rejoindre**, choisit son pseudo et colle le code complet `VAGUE1-…`.
 5. Les invités chargent automatiquement les fichiers du jeu de l’hôte. La liste indique les joueurs connectés et la limite de cinq, hôte compris.
 
-Le menu **Jeu → Multijoueur…** et **F9** ouvrent aussi le salon. L’hôte doit laisser l’application ouverte. Le code contient les adresses IPv4 locales et le port du salon ; l’application essaie ces adresses automatiquement. Le port par défaut est TCP 43765 ; il est modifiable avant la création de la partie. Les échanges sont authentifiés et chiffrés par AES-256-GCM avec le secret aléatoire contenu dans l’invitation : partagez ce code uniquement avec les participants.
+Le menu **Jeu → Multijoueur…** et **F9** ouvrent aussi le salon. L’hôte doit laisser l’application ouverte. Le code contient les adresses IPv4 locales et le port du salon ; l’application essaie ces adresses automatiquement. Le port par défaut est TCP 16383 ; il est modifiable avant la création de la partie. Les échanges sont authentifiés et chiffrés par AES-256-GCM avec le secret aléatoire contenu dans l’invitation : partagez ce code uniquement avec les participants.
 
 Cette version vise le réseau local. Elle ne fournit ni serveur de rendez-vous Internet, ni relais, ni ouverture automatique de ports de routeur.
 
@@ -41,7 +41,7 @@ Les fichiers reçus par les invités servent à la partie en cours et ne remplac
 
 `patches/MULTIJOUEUR-5-JOUEURS-POKEBALL.txt` est un script JSON complet à copier dans la Pokéball. Il remplace les trois fichiers de l’interface et du jeu par ceux de la version multijoueur. Cela remplace aussi leurs éventuelles modifications précédentes ; l’atelier conserve le retour à la version précédente.
 
-**Le moteur Windows 1.3.0 doit d’abord être installé via le nouveau ZIP.** L’ancienne Pokéball 1.2.0 ne peut pas ajouter un service réseau au processus principal. Le script texte ne peut donc pas, à lui seul, transformer l’ancien `.exe` en moteur multijoueur. Le nouveau ZIP inclut déjà la fonctionnalité ; le script est fourni pour le flux de modification demandé.
+**Le moteur Windows 1.3.1 doit d’abord être installé via le nouveau ZIP.** L’ancienne Pokéball 1.2.0 ne peut pas ajouter un service réseau au processus principal. Le script texte ne peut donc pas, à lui seul, transformer l’ancien `.exe` en moteur multijoueur. Le nouveau ZIP inclut déjà la fonctionnalité ; le script est fourni pour le flux de modification demandé.
 
 `node scripts/generate-multiplayer-patch.cjs` régénère le texte depuis les sources. Copier uniquement son contenu JSON dans l’atelier, puis cliquer sur **Valider et redémarrer le jeu**.
 
