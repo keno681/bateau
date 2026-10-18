@@ -8,4 +8,5 @@ const patch = {
   changes: ['index.html', 'style.css', 'game.js'].map(file => ({ file, content: fs.readFileSync(path.join(root, file), 'utf8') }))
 };
 fs.writeFileSync(path.join(root, 'patches', 'MULTIJOUEUR-5-JOUEURS-POKEBALL.txt'), JSON.stringify(patch, null, 2) + '\n');
-console.log('Fichier texte Pokéball généré depuis les trois fichiers du jeu.');
+fs.writeFileSync(path.join(root, 'patches', 'CAPITAINE-INSPECTEUR-POKEBALL.txt'), JSON.stringify({ ...patch, title: 'Deux nouveaux marins : capitaine et inspecteur — compatible 1.4.0' }, null, 2) + '\n');
+console.log('Scripts texte multijoueur et nouveaux personnages générés depuis les trois fichiers du jeu.');

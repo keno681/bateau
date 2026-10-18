@@ -11,7 +11,7 @@ const testDirectory=fs.mkdtempSync(path.join(os.tmpdir(),'derniere-vague-test-')
  await page.waitForLoadState('domcontentloaded');
  assert.equal(page.url(),'vague://game/index.html');
  await page.locator('.crew-card').first().waitFor();
- assert.equal(await page.locator('.crew-card').count(),3);
+ assert.equal(await page.locator('.crew-card').count(),5);
  await page.locator('#start').click();
  await page.locator('#action-2').click();
  await page.waitForTimeout(9000);

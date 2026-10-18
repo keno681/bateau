@@ -25,6 +25,8 @@ async function wait(check, timeout=15000) { const end = Date.now()+timeout; whil
   }
   await wait(async()=> (await status(host)).players.length===5);
   const before=await status(host), ids=before.players.map(p=>p.id).sort(); assert.equal(before.acceptedConnections,4);
+  await clients[1].page.locator('#action-3').click(); await clients[2].page.locator('#action-4').click();
+  await wait(async()=>!!(await status(host)).runtime.state.crew[3].work&&!!(await status(host)).runtime.state.crew[4].work);
   await clients[0].page.locator('#action-2').click();
   await wait(async()=>!!(await status(host)).runtime.state.crew[2].work);
   await host.page.locator('#pause').click();
@@ -45,7 +47,7 @@ async function wait(check, timeout=15000) { const end = Date.now()+timeout; whil
   assert.equal(await clientWorkshop.locator('#apply').isDisabled(),true); await clientWorkshop.locator('#close').click();
   await host.page.locator('#resume').click();
   await wait(async()=>!(await status(clients[2])).runtime.state.crew[2].work,14000);
-  for(const p of [host,...clients])await wait(async()=> (await status(p)).runtime.state.inventory.fish===2);
+  for(const p of [host,...clients])await wait(async()=> {const s=(await status(p)).runtime.state;return s.inventory.fish===2&&s.objectives[3]&&s.objectives[4]&&s.inventory.charts===1&&s.inventory.tools===1;});
   w=await lobby(clients[3]);const left=clients[3].page.waitForEvent('domcontentloaded');await w.locator('#leave').click();await left;
   await clients[3].page.locator('#count-bait').waitFor();assert.equal(await clients[3].page.locator('#count-bait').textContent(),'2');assert.equal(await clients[3].page.locator('#count-fish').textContent(),'0');assert.equal(await clients[3].page.locator('h1').textContent(),'Gardez le cap.');
   console.log('PASS : cinq applications Electron, invitation locale, action client appliquée par l’hôte, cinq écrans modifiés et redémarrés, quatre sockets conservées, mêmes identifiants, travail en cours conservé puis terminé, atelier réservé à l’hôte, retour solo sans écraser la sauvegarde personnelle.');

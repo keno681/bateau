@@ -1,6 +1,6 @@
 # bateau — Dernière Vague
 
-Un prototype de jeu de survie en mer, en français. Trois personnages originaux, animés, travaillent sur un bateau vu en coupe : un mécano, une cuisinière et un pêcheur.
+Un prototype de jeu de survie en mer, en français. Cinq personnages originaux, animés, travaillent sur un bateau vu en coupe : un mécano, une cuisinière, un pêcheur, un capitaine et un inspecteur.
 
 ## Jouer en local
 
@@ -18,11 +18,13 @@ Ouvrir le jeu via un navigateur connecté à ce serveur. Aucun paquet à install
 - **Gaston, mécano** : 2 pièces → +26 points de coque.
 - **Suzanne, cuisinière** : 2 provisions ou 1 poisson → +30 points de repas et +8 points de santé. Un poisson disponible est utilisé en priorité.
 - **Marin, pêcheur** : 1 appât → 2 poissons pour la cuisine.
-- Les commandes de travail sont sur les cartes des marins. Chaque marin peut accomplir une seule tâche à la fois ; les trois peuvent travailler simultanément.
+- **Émile, capitaine** : 1 carte marine → dégâts de tempête réduits de moitié pendant 18 secondes.
+- **Victor, inspecteur** : 1 outil de contrôle → +8 points de coque et +12 points de santé.
+- Les commandes de travail sont sur les cartes des marins. Chaque marin peut accomplir une seule tâche à la fois ; les cinq peuvent travailler simultanément.
 - Une journée dure 140 secondes et va de 06:00 à 18:00. Le bateau subit des dégâts continus et les repas diminuent. Sous 15 points de repas, la santé commence à baisser.
-- Survivre jusqu’au soir permet de passer à la journée suivante. Les trois objectifs sont des repères, pas une obligation de victoire. La tempête s’intensifie progressivement.
+- Survivre jusqu’au soir permet de passer à la journée suivante. Les cinq objectifs sont des repères, pas une obligation de victoire. La tempête s’intensifie progressivement.
 - Chaque marin reçoit une humeur aléatoire chaque jour : motivé (+30 % de vitesse), serein (normale), fatigué (−25 %) ou grincheux (−15 %).
-- Pause via le bouton supérieur ou Espace. Touches 1/2/3 : sélectionner un marin (hors bouton ou dialogue actif). Passer à un autre onglet met automatiquement en pause.
+- Pause via le bouton supérieur ou Espace. Touches 1/2/3/4/5 : sélectionner un marin (hors bouton ou dialogue actif). Passer à un autre onglet met automatiquement en pause.
 - Sauvegarde locale automatique toutes les deux secondes et après les actions importantes. Une partie chargée est en pause. Les tâches en cours et leur progression sont conservées et reprennent après la pause. Une nouvelle traversée demande confirmation.
 
 ## Technique
@@ -100,3 +102,7 @@ Voir [les instructions de connexion et de dépannage](MULTIJOUEUR.md). Le [scrip
 Le ZIP Windows contient **Dernière Vague.exe** et ses fichiers associés. Extrayez tout, gardez le dossier complet, puis lancez cet exécutable pour utiliser les sources modifiables dans **resources/app**. Le HTML, le CSS, le JavaScript du jeu et les fichiers `desktop` du moteur sont accessibles. Fermez le jeu avant une modification manuelle puis relancez-le. Les modifications du moteur réseau demandent une nouvelle connexion des joueurs ; les rechargements Pokéball conservent les connexions. Le portable autonome reste également disponible.
 
 Le réseau utilise **UDP 16383** à partir de 1.4.0. Les codes d’invitation TCP précédents sont incompatibles. Installez le même moteur sur tous les PC et créez un nouveau salon. La Pokéball ne remplace pas le moteur de l’exécutable.
+
+### Ajouter le capitaine et l’inspecteur à la version 1.4.0
+
+Copiez tout [CAPITAINE-INSPECTEUR-POKEBALL.txt](patches/CAPITAINE-INSPECTEUR-POKEBALL.txt) dans la Pokéball de l’hôte puis cliquez sur **Valider et redémarrer le jeu**. Le script remplace `index.html`, `style.css` et `game.js` ; gardez une copie de vos adaptations précédentes. En partie multijoueur, il est partagé automatiquement avec les invités. Aucun nouveau moteur, port ou réglage réseau n’est requis. Les sauvegardes à trois marins sont converties à cinq sans perdre la journée, les stocks précédents ou les tâches en cours. Les cartes et outils reçoivent un stock initial de deux chacun. Les anciennes versions sans cette mise à jour restent à trois marins.
