@@ -106,3 +106,15 @@ Le réseau utilise **UDP 16383** à partir de 1.4.0. Les codes d’invitation TC
 ### Ajouter le capitaine et l’inspecteur à la version 1.4.0
 
 Copiez tout [CAPITAINE-INSPECTEUR-POKEBALL.txt](patches/CAPITAINE-INSPECTEUR-POKEBALL.txt) dans la Pokéball de l’hôte puis cliquez sur **Valider et redémarrer le jeu**. Le script remplace `index.html`, `style.css` et `game.js` ; gardez une copie de vos adaptations précédentes. En partie multijoueur, il est partagé automatiquement avec les invités. Aucun nouveau moteur, port ou réglage réseau n’est requis. Les sauvegardes à trois marins sont converties à cinq sans perdre la journée, les stocks précédents ou les tâches en cours. Les cartes et outils reçoivent un stock initial de deux chacun. Les anciennes versions sans cette mise à jour restent à trois marins.
+
+### Bateau en 3D et huit salles
+
+Le [texte Pokéball BATEAU-3D-8-SALLES-POKEBALL.txt](patches/BATEAU-3D-8-SALLES-POKEBALL.txt) ajoute une vue WebGL avec personnages en volume, mer animée, rotation et zoom. Aux trois salles existantes s’ajoutent la passerelle, la salle radio, l’infirmerie, le dortoir et l’atelier : huit salles meublées au total. Sélectionnez un marin puis une salle pour l’y déplacer ; les ordres de travail le ramènent à son poste. Les destinations sont sauvegardées et synchronisées avec les invités. Les nouvelles salles offrent des lieux de déplacement ; les actions de métier restent celles des cinq personnages.
+
+Dans la vue, glissez pour tourner la caméra ou utilisez les flèches. La molette et les boutons +/− règlent le zoom ; Recentrer retrouve la caméra de départ. Les boutons des salles restent utilisables au clavier et sur écran tactile. La caméra est locale à chaque joueur. Une vue de secours permet de continuer la partie si WebGL est indisponible.
+
+L’hôte colle tout le texte dans sa Pokéball puis valide ; tous les écrans se rechargent sans changer le moteur 1.4.0 ni la connexion UDP. Le script remplace les trois fichiers du jeu, y compris les deux nouveaux personnages si nécessaire. Il remplace les adaptations précédentes de ces fichiers ; gardez-en une copie. Les sauvegardes à trois ou cinq marins sont conservées. La limite reste cinq joueurs.
+
+Pour modifier le rendu : éditez `scripts/boat3d.js`, puis lancez `node scripts/generate-3d-patch.cjs`. Le rendu est incorporé dans `game.js` pour rester compatible avec les trois fichiers autorisés dans la Pokéball. Aucun téléchargement de moteur, CDN ou accès Internet n’est nécessaire pour jouer. Le script capitaine/inspecteur précédent conserve son contenu d’origine ; le réappliquer remplace aussi la vue 3D par l’ancienne vue.
+
+Validation 3D : `node tests/boat3d.cjs` (serveur local port 8010), et `PATCH_FILE=patches/BATEAU-3D-8-SALLES-POKEBALL.txt node tests/crew-patch.cjs` pour l’installation sur la vraie version 1.4.0 et les déplacements envoyés par un invité. Les tests WebGL utilisent un rendu logiciel dans l’environnement Linux ; l’affichage et les performances sur vos PC Windows restent à vérifier.

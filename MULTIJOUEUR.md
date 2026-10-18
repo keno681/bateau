@@ -69,3 +69,9 @@ Les invitations UDP ne sont pas compatibles avec les anciens salons TCP. Créez 
 ## Capitaine et inspecteur : script compatible avec le moteur 1.4.0
 
 L’hôte peut coller `patches/CAPITAINE-INSPECTEUR-POKEBALL.txt` dans sa Pokéball puis valider. Les deux personnages et leurs objets sont ajoutés chez tous, sans changer la connexion UDP. Le capitaine consomme une carte pour réduire les dégâts de moitié pendant 18 secondes ; l’inspecteur consomme un outil pour ajouter 8 points de coque et 12 de santé. Chaque invité peut les sélectionner, ramasser leurs objets et lancer leurs actions. Le nombre maximal de joueurs reste cinq. Le script remplace les trois fichiers du jeu ; la version précédente reste accessible dans l’atelier. Les anciens ZIP 1.4.0 nécessitent ce script pour bénéficier de ces deux personnages.
+
+## Vue 3D et cinq salles supplémentaires
+
+L’hôte applique `patches/BATEAU-3D-8-SALLES-POKEBALL.txt` dans la Pokéball. La mise à jour remplace les trois fichiers du jeu et inclut le capitaine et l’inspecteur. Huit salles sont accessibles : salle des machines, cambuse, cale, atelier, passerelle, salle radio, infirmerie et dortoir. Chaque joueur sélectionne un marin puis une salle pour l’y déplacer ; les destinations sont partagées. Un marin occupé termine son travail avant un nouveau déplacement. Les travaux ramènent le marin à sa salle de métier. Les actions et objectifs de survie restent disponibles.
+
+La rotation et le zoom de la caméra sont propres à chaque PC. Cette mise à jour ne change ni UDP 16383, ni le moteur Windows 1.4.0, ni les droits de la Pokéball : seul l’hôte valide les scripts communs. Le rendu WebGL et les mises à jour ont été vérifiés dans deux applications Electron et dans un navigateur sous Linux, y compris l’installation sur la version 1.4.0 d’origine.

@@ -5,11 +5,11 @@ const fs = require('node:fs'), path = require('node:path'), os = require('node:o
 const { execFileSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..'), fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'vague-old-crew-'));
 const apps = [];
-const wait = async check => { const end = Date.now() + 20000; while (!await check()) { if (Date.now() > end) throw Error('Équipage partagé non reçu'); await new Promise(r => setTimeout(r, 50)); } };
+const wait = async check => { const end = Date.now() + 20000; while (!await check().catch(()=>false)) { if (Date.now() > end) throw Error('Équipage partagé non reçu'); await new Promise(r => setTimeout(r, 50)); } };
 const status = p => p.evaluate(() => window.vagueNetwork.bootstrap());
 async function launch(i) {
   const profile = path.join(fixture, 'profile-' + i);
-  const app = await electron.launch({ executablePath: require('electron'), args: [fixture, '--no-sandbox', '--ozone-platform=headless', '--disable-gpu'], env: { ...process.env, XDG_CONFIG_HOME: profile, XDG_CACHE_HOME: profile + '-cache' } });
+  const app = await electron.launch({ executablePath: require('electron'), args: [fixture, '--no-sandbox', '--ozone-platform=headless', ...(process.env.PATCH_FILE?.includes('BATEAU-3D') ? ['--enable-unsafe-swiftshader', '--use-gl=angle', '--use-angle=swiftshader'] : ['--disable-gpu'])], env: { ...process.env, XDG_CONFIG_HOME: profile, XDG_CACHE_HOME: profile + '-cache' } });
   apps.push(app); const page = await app.firstWindow(); await page.locator('#start').click(); return { app, page };
 }
 async function lobby(p) { const opened = p.app.waitForEvent('window'); await p.page.locator('#network').click(); const w = await opened; await w.locator('#status').waitFor(); return w; }
@@ -26,11 +26,16 @@ async function lobby(p) { const opened = p.app.waitForEvent('window'); await p.p
     await wait(async () => (await status(client.page)).phase === 'running');
     const ids = (await status(host.page)).players.map(p => p.id).sort();
     const opened = host.app.waitForEvent('window'); await host.page.locator('#pokeball').click(); w = await opened;
-    await w.locator('#script').fill(fs.readFileSync(path.join(root, 'patches/CAPITAINE-INSPECTEUR-POKEBALL.txt'), 'utf8'));
+    await w.locator('#script').fill(fs.readFileSync(path.join(root, process.env.PATCH_FILE || 'patches/CAPITAINE-INSPECTEUR-POKEBALL.txt'), 'utf8'));
     await w.locator('#apply').click();
     for (const p of [host, client]) await wait(async () => { try { const s = await status(p.page); return s.phase === 'running' && s.revision === 2 && s.runtime.state.crew.length === 5; } catch { return false; } });
     for (const p of [host, client]) assert.equal(await p.page.locator('.crew-card').count(), 5);
     await host.page.locator('#resume').click();
+    if (process.env.PATCH_FILE?.includes('BATEAU-3D')) {
+      for(const p of [host,client]) { assert.equal(await p.page.locator('#room-list button').count(),8); assert.match(await p.page.locator('#scene').getAttribute('class'),/webgl-ready/); }
+      await client.page.locator('[data-select="3"]').click(); await client.page.locator('[data-room="radio"]').click();
+      await wait(async()=> (await status(host.page)).runtime.state.crew[3].room==='radio');
+    }
     await client.page.locator('#action-3').click(); await client.page.locator('#action-4').click();
     await wait(async () => { const s = (await status(host.page)).runtime.state; return s.objectives[3] && s.objectives[4]; });
     for (const p of [host, client]) {
