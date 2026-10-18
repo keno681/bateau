@@ -45,7 +45,7 @@ Le test utilise une horloge accélérée et la préférence de réduction des mo
 
 Les versions publiées sont disponibles dans [les Releases GitHub](https://github.com/keno681/bateau/releases). Le workflow `.github/workflows/windows-release.yml` compile et publie un exécutable portable lorsqu’un tag `v*` est envoyé. Il utilise uniquement le jeton automatique du dépôt avec la permission `contents: write`, sans secret supplémentaire.
 
-La version portable est produite dans `dist/Derniere-Vague-1.0.0-Windows-x64.exe`. Elle contient le jeu et son moteur : aucun autre fichier, navigateur, Python ou connexion Internet n’est nécessaire pour jouer. Copier l’exécutable sur un PC Windows 10/11 en 64 bits puis le lancer par double-clic. F11 active/désactive le plein écran ; Échap quitte le plein écran.
+La version portable est produite dans `dist/Derniere-Vague-1.1.0-Windows-x64.exe`. Elle contient le jeu et son moteur : aucun autre fichier, navigateur, Python ou connexion Internet n’est nécessaire pour jouer. Copier l’exécutable sur un PC Windows 10/11 en 64 bits puis le lancer par double-clic. F11 active/désactive le plein écran ; Échap quitte le plein écran.
 
 Le fichier n’est pas signé avec un certificat d’éditeur. Les sauvegardes restent dans le profil local de l’utilisateur Windows et ne sont pas partagées avec la version navigateur ni entre différents PC. La compilation et l’archive ont été contrôlées sous Linux ; le lancement de l’exécutable sur Windows reste à vérifier.
 
@@ -78,3 +78,11 @@ XDG_CACHE_HOME=/workspace/.cache ELECTRON_BUILDER_CACHE=/workspace/.cache/electr
 Les vérifications TLS et les sommes de contrôle des téléchargements restent activées. La cible portable peut être compilée sous Linux sans Wine, car l’édition du binaire interne et la signature sont désactivées. L’exécutable portable porte l’icône du jeu ; l’exécutable interne peut conserver l’icône Electron.
 
 Avec Playwright disponible, `node tests/desktop.cjs` teste le chargement dans Electron, la pêche, la sauvegarde et l’isolation du rendu. Sous Linux, le test utilise le mode headless et un profil temporaire. Ces tests ne constituent pas un lancement du binaire Windows.
+
+## Pokéball : carnet de code
+
+La Pokéball en bas à droite ouvre un carnet de code. La traversée est mise en pause pendant l’écriture, puis retrouve son état précédent à la fermeture. Le carnet propose des numéros de ligne, une indentation de deux espaces avec Tab et l’enregistrement avec Ctrl+S (ou Cmd+S).
+
+Le texte est aussi enregistré automatiquement sur le même appareil et conservé séparément de la partie : recommencer une traversée ne l’efface pas. **Le code du carnet n’est pas encore exécuté** : cet espace prépare les futures fonctionnalités. L’état de sauvegarde indique si le stockage local est indisponible.
+
+`node tests/notebook.cjs` vérifie le carnet dans Electron, y compris la persistance, la pause, le format mobile et le comportement quand le stockage est indisponible. Les nouvelles Releases contiennent le `.exe` et le ZIP Windows ensemble.

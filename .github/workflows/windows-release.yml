@@ -43,5 +43,18 @@ jobs:
           $checksum = $exe.FullName + '.sha256'
           $hash = (Get-FileHash $exe.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  $($exe.Name)" | Set-Content $checksum -Encoding ascii
-          gh release create "$env:GITHUB_REF_NAME" "$($exe.FullName)" "$checksum" --verify-tag --title "Dernière Vague $env:GITHUB_REF_NAME — Windows" --notes-file '.github/release-notes.md'
+          $zip = Join-Path $exe.DirectoryName ($exe.BaseName + '.zip')
+          $folder = Join-Path $exe.DirectoryName 'zip/Derniere-Vague'
+          New-Item -ItemType Directory -Force $folder | Out-Null
+          Copy-Item -Path @($exe.FullName, $checksum) -Destination $folder
+          @'
+          DERNIÈRE VAGUE — Windows 10/11, 64 bits
+          Faites un clic droit sur le ZIP puis « Extraire tout ».
+          Ouvrez le dossier extrait puis double-cliquez sur le fichier .exe.
+          La Pokéball en bas à droite ouvre votre carnet de code.
+          Le texte est sauvegardé localement ; il ne s’exécute pas encore.
+          F11 : plein écran. Programme non signé.
+          '@ | Set-Content (Join-Path $folder 'LISEZ-MOI.txt') -Encoding utf8
+          Compress-Archive -Path $folder -DestinationPath $zip
+          gh release create "$env:GITHUB_REF_NAME" "$($exe.FullName)" "$checksum" "$zip" --verify-tag --title "Dernière Vague $env:GITHUB_REF_NAME — Windows" --notes-file '.github/release-notes.md'
           if ($LASTEXITCODE -ne 0) { throw 'GitHub release publication failed.' }

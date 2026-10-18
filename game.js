@@ -67,7 +67,7 @@ function renderStats(){
  roles.forEach((r,i)=>{const c=state.crew[i],cost=costFor(i);$('cost-'+i).textContent=Object.entries(cost).map(([key,n])=>n+' '+resources[key].label.toLowerCase()).join(' + ');$('action-'+i).disabled=paused||!!state.outcome||!!c.work||Object.entries(cost).some(([key,n])=>state.inventory[key]<n);$('status-'+i).textContent=c.work?(c.work.kind==='collect'?'Récupération en cours…':'Au travail…'):'Disponible · '+moods[c.mood].note.toLowerCase();$('work-'+i).style.width=c.work?Math.min(100,c.work.elapsed/c.work.duration*100)+'%':'0%';});
  $('objectives').innerHTML=['Réparer la coque','Préparer un repas chaud','Ramener du poisson'].map((label,i)=>`<div class="objective ${state.objectives[i]?'done':''}"><i>${state.objectives[i]?'✓':''}</i>${label}</div>`).join('');$('objective-count').textContent=state.objectives.filter(Boolean).length+' / 3';
 }
-function setPause(value){paused=value;document.querySelector('.app').classList.toggle('paused',value);$('pause-shade').hidden=!value||!!state.outcome||$('welcome').open||$('confirm-reset').open;$('pause').textContent=value?'▶':'II';$('pause').setAttribute('aria-label',value?'Reprendre la partie':'Mettre en pause');renderObjects();renderStats();}
+function setPause(value){paused=value;document.querySelector('.app').classList.toggle('paused',value);$('pause-shade').hidden=!value||!!state.outcome||$('welcome').open||$('confirm-reset').open||$('code-notebook').open;$('pause').textContent=value?'▶':'II';$('pause').setAttribute('aria-label',value?'Reprendre la partie':'Mettre en pause');renderObjects();renderStats();}
 function endDay(outcome){state.outcome=outcome;setPause(true);log(outcome==='won'?'18:00. Une journée de plus. Nous sommes toujours là.':state.hull<=0?'La coque a cédé sous les vagues.':'L’équipage n’a plus la force de tenir.');save();showResult();}
 function showResult(){let won=state.outcome==='won';$('result-eyebrow').textContent=won?'JOUR '+state.day+' · TRAVERSÉE RÉUSSIE':'FIN DE LA TRAVERSÉE';$('result-title').textContent=won?'Encore à flot.':'La mer a eu le dernier mot.';$('result-description').textContent=won?'Le soir est arrivé et tout l’équipage est vivant. Demain, la tempête sera plus forte et chacun aura une nouvelle humeur.':state.hull<=0?'La coque a cédé. Collectez des pièces et faites réparer Gaston plus souvent lors de la prochaine traversée.':'Les repas ont manqué trop longtemps. Pêchez et cuisinez pour protéger l’équipage.';$('result-stats').innerHTML=`<div><strong>${Math.ceil(state.hull)} %</strong>Coque</div><div><strong>${Math.ceil(state.health)} %</strong>Santé</div><div><strong>${state.objectives.filter(Boolean).length} / 3</strong>Objectifs</div>`;$('next-day').textContent=won?'Affronter le jour '+(state.day+1)+' →':'Recommencer la traversée →';if(!$('result').open)$('result').showModal();}
 function nextDay(){if(state.outcome==='lost'){reset();return;}state.day++;state.time=0;state.outcome=null;state.objectives=[false,false,false];state.crew.forEach((c,i)=>{c.mood=Math.floor(Math.random()*moods.length);c.work=null;});state.objects=[];spawnTimer=0;renderCrew();seedObjects();log('Nouvelle aube. Les humeurs changent, la tempête reste.');$('result').close();started=true;setPause(false);select(selected);save();}
@@ -84,5 +84,35 @@ $('reset').onclick=()=>{modalWasPaused=paused;setPause(true);$('confirm-reset').
 $('cancel-reset').onclick=()=>{$('confirm-reset').close();setPause(modalWasPaused);};$('confirm-reset').addEventListener('cancel',e=>{e.preventDefault();$('cancel-reset').click();});$('confirm-new').onclick=reset;
 window.addEventListener('keydown',e=>{if(document.querySelector('dialog[open]')||/INPUT|TEXTAREA|BUTTON/.test(document.activeElement.tagName))return;if(e.code==='Space'){e.preventDefault();$('pause').click();}if(['1','2','3'].includes(e.key))select(Number(e.key)-1);});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&started&&!state.outcome){setPause(true);save();}});window.addEventListener('pagehide',save);
+// Le carnet est séparé de la partie : recommencer ne supprime pas le code.
+const CODE_KEY='derniere-vague-code-v1';
+let codeWasPaused=true, codeSaveTimer;
+const codeInput=$('code-input');
+function updateCodeLines(){
+ const count=codeInput.value.split('\n').length;
+ $('code-lines').textContent=Array.from({length:count},(_,i)=>i+1).join('\n');
+ $('code-line-count').textContent=count+(count===1?' ligne':' lignes');
+ $('code-lines').scrollTop=codeInput.scrollTop;
+}
+function saveCode(){
+ clearTimeout(codeSaveTimer);
+ try{localStorage.setItem(CODE_KEY,codeInput.value);$('code-save-status').textContent='Enregistré sur cet appareil';return true;}
+ catch{$('code-save-status').textContent='Enregistrement indisponible : gardez une copie de votre texte.';return false;}
+}
+try{codeInput.value=localStorage.getItem(CODE_KEY)||'';}catch{$('code-save-status').textContent='Stockage local indisponible';}
+updateCodeLines();
+$('pokeball').onclick=()=>{
+ codeWasPaused=paused;setPause(true);$('code-notebook').showModal();$('pause-shade').hidden=true;codeInput.focus();
+};
+function closeCode(){saveCode();$('code-notebook').close();setPause(codeWasPaused);$('pokeball').focus();}
+$('close-code').onclick=closeCode;$('save-code').onclick=closeCode;
+$('code-notebook').addEventListener('cancel',e=>{e.preventDefault();closeCode();});
+codeInput.addEventListener('input',()=>{updateCodeLines();$('code-save-status').textContent='Enregistrement…';clearTimeout(codeSaveTimer);codeSaveTimer=setTimeout(saveCode,400);});
+codeInput.addEventListener('scroll',()=>{$('code-lines').scrollTop=codeInput.scrollTop;});
+codeInput.addEventListener('keydown',e=>{
+ if(e.key==='Tab'){e.preventDefault();const start=codeInput.selectionStart,end=codeInput.selectionEnd;if(codeInput.value.length-(end-start)+2>codeInput.maxLength)return;codeInput.setRangeText('  ',start,end,'end');codeInput.dispatchEvent(new Event('input'));}
+ if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();saveCode();}
+});
+window.addEventListener('pagehide',saveCode);
 state=load();let restored=!!state;if(!state)state=fresh();renderCrew();if(!state.objects.length)seedObjects();renderLog();select(0);setPause(true);if(!restored){log('L’Espérance quitte l’abri. Tout le monde à son poste !');$('welcome').showModal();$('pause-shade').hidden=true;}else{started=true;if(state.outcome)showResult();else toast('Partie retrouvée. Reprenez la traversée quand vous êtes prêt.');}requestAnimationFrame(frame);
 })();
